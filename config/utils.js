@@ -6,20 +6,6 @@ const { Token, Key } = require('../models');
 
 class Utils {
 
-  static getModel() {
-    return model
-  }
-
-  static generateCode() {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    const charactersLength = characters.length;
-    for (let i = 0; i < 50; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
-  }
-
   static isInteger(data) {
     // Vérifie si la donnée est de type 'number' et est un entier
     return typeof data === 'number' && isFinite(data) && Math.floor(data) === data;
@@ -162,14 +148,6 @@ static verifyMultipartData(req, requiredFields) {
     return token;
   }
 
-
-  /**
- * Vérifie la présence et la validité d'un "hmskey" dans les en-têtes de la requête.
- *
- * @param {Object} headers - Les en-têtes de la requête HTTP.
- * @returns {Promise<Object>} - Un objet contenant le statut de validation et, si valide, les détails de la clé.
- * @throws {Error} - En cas d'erreur lors de la vérification.
- */
   static async verifyApiKey(headers) {
     const hmskey = headers['api-key'];
 

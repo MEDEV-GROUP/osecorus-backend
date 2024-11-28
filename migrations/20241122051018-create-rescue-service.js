@@ -19,7 +19,10 @@ module.exports = {
       },
       contact_number: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+          is: /^[0-9]*$/ // Valide uniquement les chiffres (optionnel)
+        }
       },
       description: {
         type: Sequelize.TEXT,
@@ -32,15 +35,25 @@ module.exports = {
       },
       created_at: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
       updated_at: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       }
     });
   },
+
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('RescueServices');
+    try {
+
+      await queryInterface.dropTable('RescueServices');
+    } catch (error) {
+      console.error('Erreur dans la migration down de RescueServices:', error);
+      throw error;
+    }
   }
+
 };

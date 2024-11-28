@@ -25,19 +25,27 @@ module.exports = {
       },
       media_url: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+          isUrl: true // Validation pour s'assurer que c'est une URL valide
+        }
       },
       thumbnail_url: {
         type: Sequelize.STRING,
-        allowNull: true
+        allowNull: true,
+        validate: {
+          isUrl: true // Validation pour une URL valide si elle est définie
+        }
       },
       created_at: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
       updated_at: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       }
     });
 
@@ -46,23 +54,25 @@ module.exports = {
       name: 'alert_media_alert_id_idx'
     });
   },
+
   down: async (queryInterface, Sequelize) => {
     try {
-      // Supprimer l'index s'il existe
+      // Supprimer les contraintes
+      await queryInterface.removeConstraint('AlertMedia', 'alert_media_alert_id_idx').catch(() => {
+        console.log("La contrainte alert_id n'existe peut-être pas déjà");
+      });
+  
+      // Supprimer les index
       await queryInterface.removeIndex('AlertMedia', 'alert_media_alert_id_idx').catch(() => {
         console.log("L'index alert_id n'existe peut-être pas déjà");
       });
-
+  
       // Supprimer la table
       await queryInterface.dropTable('AlertMedia');
-
-      // Supprimer le type ENUM
-      await queryInterface.sequelize.query('DROP TYPE IF EXISTS enum_AlertMedia_media_type;').catch(() => {
-        console.log("Le type ENUM n'existe peut-être pas déjà");
-      });
     } catch (error) {
       console.error('Erreur dans la migration down de AlertMedia:', error);
       throw error;
     }
   }
+  
 };

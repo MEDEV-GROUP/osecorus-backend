@@ -1,27 +1,53 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class RescueService extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
+      // Association avec RescueMembers
+      this.hasMany(models.RescueMember, {
+        foreignKey: 'rescue_service_id',
+        as: 'members'
+      });
     }
   }
+
   RescueService.init({
-    name: DataTypes.STRING,
-    service_type: DataTypes.STRING,
-    contact_number: DataTypes.STRING,
-    description: DataTypes.TEXT,
-    is_active: DataTypes.BOOLEAN
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    service_type: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    contact_number: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        is: /^[0-9]*$/ // Valide uniquement les chiffres (optionnel)
+      }
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
+    }
   }, {
     sequelize,
     modelName: 'RescueService',
+    tableName: 'RescueServices',
+    underscored: true // Active le snake_case pour les colonnes
   });
+
   return RescueService;
 };

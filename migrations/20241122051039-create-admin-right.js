@@ -30,25 +30,36 @@ module.exports = {
       },
       created_at: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
       updated_at: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       }
     });
+
+    // Ajouter l'index unique sur user_id
     await queryInterface.addIndex('AdminRights', ['user_id'], {
       name: 'admin_rights_user_id_idx',
       unique: true
     });
   },
+
   down: async (queryInterface, Sequelize) => {
     try {
-      // D'abord supprimer l'index s'il existe
+      // Supprimer la contrainte de clé étrangère avant de supprimer l'index
+      await queryInterface.removeConstraint('AdminRights', 'admin_rights_user_id_idx').catch(() => {
+        console.log("La contrainte admin_rights_user_id_idx n'existe peut-être pas déjà");
+      });
+
+      // Supprimer l'index unique
       await queryInterface.removeIndex('AdminRights', 'admin_rights_user_id_idx').catch(() => {
         console.log("L'index n'existe peut-être pas déjà");
       });
-      // Ensuite supprimer la table
+
+      // Supprimer la table
       await queryInterface.dropTable('AdminRights');
     } catch (error) {
       console.error('Erreur dans la migration down:', error);

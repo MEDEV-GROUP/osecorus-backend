@@ -1,38 +1,63 @@
 'use strict';
 const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
-    class User extends Model {
-        static associate(models) {
-            // define association here
-        }
+  class User extends Model {
+    static associate(models) {
+      // Définition des associations
+      this.hasMany(models.Alert, { foreignKey: 'reporter_id', as: 'alerts' });
+      this.hasOne(models.RescueMember, { foreignKey: 'user_id', as: 'rescueMember' });
+      this.hasOne(models.AdminRight, { foreignKey: 'user_id', as: 'adminRight' });
     }
-    User.init({
-        // 1. Ajout de l'ID avec UUID
-        id: {
-            type: DataTypes.UUID,
-            defaultValue: DataTypes.UUIDV4,
-            primaryKey: true
-        },
-        email: DataTypes.STRING,
-        password_hash: DataTypes.STRING,
-        phone_number: DataTypes.STRING,
-        // 2. Définition des valeurs de l'ENUM
-        role: {
-            type: DataTypes.ENUM('CITIZEN', 'RESCUE_MEMBER', 'ADMIN'),
-            defaultValue: 'CITIZEN'
-        },
-        first_name: DataTypes.STRING,
-        last_name: DataTypes.STRING,
-        // 3. Ajout d'une valeur par défaut pour is_active
-        is_active: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true
-        }
-    }, {
-        sequelize,
-        modelName: 'User',
-        // 4. Ajout de l'option underscored
-        underscored: true,
-    });
-    return User;
+  }
+
+  User.init({
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true // Validation d'email
+      }
+    },
+    password_hash: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    phone_number: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: {
+        is: /^[0-9]*$/ // Permet uniquement les chiffres
+      }
+    },
+    role: {
+      type: DataTypes.ENUM('CITIZEN', 'RESCUE_MEMBER', 'ADMIN'),
+      defaultValue: 'CITIZEN'
+    },
+    first_name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    last_name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
+  }, {
+    sequelize,
+    modelName: 'User',
+    tableName: 'Users',
+    underscored: true
+  });
+
+  return User;
 };
