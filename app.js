@@ -8,6 +8,10 @@ var cors = require('cors');  // N'oubliez pas d'installer cors
 const AdminController = require('./controllers/AdminController');
 const CitizenController = require('./controllers/CitizenController');
 
+// Import du middleware pour les logs
+const { logRequestResponse } = require('./middlewares/logRequestResponse');
+
+
 var app = express();
 
 // Configuration CORS
@@ -22,6 +26,9 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+// Middleware pour enregistrer les logs des requêtes et réponses
+app.use(logRequestResponse);
 
 // Configuration des dossiers statiques
 app.use(express.static(path.join(__dirname, 'public')));

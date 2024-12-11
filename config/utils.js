@@ -6,22 +6,6 @@ const { Token, Key } = require('../models');
 
 class Utils {
 
-  static isInteger(data) {
-    // Vérifie si la donnée est de type 'number' et est un entier
-    return typeof data === 'number' && isFinite(data) && Math.floor(data) === data;
-  }
-
-  static isEmail(data) {
-    const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return regex.test(data);
-  }
-
-  static isString(data) {
-    return typeof data === 'string';
-  }
-
-
-// Utiliser verifyRequestData
 static verifyRequestData(body, requiredFields) {
   const missingFields = requiredFields.filter(field => 
       !(field in body) || 
@@ -88,85 +72,6 @@ static verifyMultipartData(req, requiredFields) {
     } catch (error) {
       console.error('Erreur lors de la vérification du mot de passe:', error);
       return false;
-    }
-  }
-
-  static async generateToken_(user, userType) {
-    const token = jwt.sign({ id: user.id, type: userType }, 'N5B4CEX4S6VQFBXA1N6JIO1Z2FZBUK59FYKSJGLTKO5YBFHFDJ0LXDQ52RETUVV3', { expiresIn: '90d' });
-    return token;
-  };
-
-  static async generateToken(userId, userType, durationInMonths) {
-    const JWT_SECRET = "N5B4CEX4S6VQFBXA1N6JIO1Z2FZBUK59FYKSJGLTKO5YBFHFDJ0LXDQ52RETUVV3"
-    // Vérifier que durationInMonths est un entier entre 1 et 6
-    if (
-      !Number.isInteger(durationInMonths) ||
-      durationInMonths < 1 ||
-      durationInMonths > 6
-    ) {
-      throw new Error('La durée doit être un entier entre 1 et 6 mois.');
-    }
-
-    // Supprimer les tokens existants pour ce userId et userType
-    await Token.destroy({
-      where: {
-        userId,
-        userType
-      }
-    });
-
-    // Calculer la durée en secondes pour JWT (approximativement 30 jours par mois)
-    const secondsPerMonth = 30 * 24 * 60 * 60; // 30 jours
-    const expiresInSeconds = durationInMonths * secondsPerMonth;
-
-    // Calculer la date d'expiration
-    const expireAt = new Date(Date.now() + expiresInSeconds * 1000);
-    console.log(expireAt);
-
-    // Définir la charge utile du token
-    const payload = {
-      userId,
-      userType
-    };
-
-    // Définir les options du token
-    const options = {
-      expiresIn: expiresInSeconds // Validité du token en secondes
-    };
-
-    // Générer le token
-    const token = jwt.sign(payload, JWT_SECRET, options);
-
-    // Enregistrer le token dans la base de données
-    await Token.create({
-      token,
-      userId,
-      userType,
-      expireAt
-    });
-
-    return token;
-  }
-
-  static async verifyApiKey(headers) {
-    const hmskey = headers['api-key'];
-
-    if (!hmskey) {
-      return { isValid: false, message: 'api-key manquant dans les en-têtes.' };
-    }
-
-    try {
-      // const KeyModel = this.getModel().Key;
-      const keyRecord = await Key.findOne({ where: { key: hmskey } });
-
-      if (!keyRecord) {
-        return { isValid: false, message: 'api-key invalide.' };
-      }
-
-      return { isValid: true, key: keyRecord };
-    } catch (error) {
-      console.error('Erreur lors de la vérification de hmskey:', error);
-      return { isValid: false, message: 'Erreur serveur lors de la vérification de hmskey.' };
     }
   }
 

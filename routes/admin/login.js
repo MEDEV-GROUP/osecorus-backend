@@ -1,64 +1,68 @@
 const express = require('express');
 const router = express.Router();
-const { User } = require('../../models');
+const { User, Token } = require('../../models');
 const { verifyRequestData, compareWithBcrypt } = require('../../config/utils');
+const ApiResponse = require('../../utils/ApiResponse'); // Classe pour les réponses API
+const TokenManager = require('../../utils/TokenManager'); // Classe pour la gestion des tokens
+const { Op } = require('sequelize'); // Opérateurs Sequelize
 
 router.post('/', async (req, res) => {
-    const requiredFields = ["email", "password"];
-    const verify = verifyRequestData(req.body, requiredFields);
+  const requiredFields = ["email", "password"];
+  const verify = verifyRequestData(req.body, requiredFields);
 
-    if (!verify.isValid) {
-        return res.status(400).json({
-            message: "Champs requis manquants",
-            data: {
-                missingFields: verify.missingFields
-            }
-        });
+  if (!verify.isValid) {
+    return ApiResponse.badRequest(res, "Champs requis manquants", { missingFields: verify.missingFields });
+  }
+
+  try {
+    const { email, password } = req.body;
+
+    // Rechercher l'utilisateur admin
+    const admin = await User.findOne({
+      where: {
+        email,
+        role: 'ADMIN'
+      }
+    });
+
+    if (!admin) {
+      return ApiResponse.badRequest(res, "Email inconnu");
     }
 
-    try {
-        const { email, password } = req.body;
-
-        // Chercher l'admin
-        const admin = await User.findOne({
-            where: {
-                email,
-                role: 'ADMIN'
-            }
-        });
-
-        if (!admin) {
-            return res.status(400).json({
-                message: "Email inconnu",
-                data: null
-            });
-        }
-
-        // Comparer le mot de passe
-        const isPasswordValid = await compareWithBcrypt(password, admin.password_hash);
-        if (!isPasswordValid) {
-            return res.status(400).json({
-                message: "Mot de passe incorrect",
-                data: null
-            });
-        }
-
-        res.status(200).json({
-            message: "Connexion réussie",
-            data: {
-                id: admin.id,
-                email: admin.email,
-                firstName: admin.first_name,
-                lastName: admin.last_name,
-                role: admin.role
-            }
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: "Erreur serveur",
-            data: error.message
-        });
+    // Vérifier le mot de passe
+    const isPasswordValid = await compareWithBcrypt(password, admin.password_hash);
+    if (!isPasswordValid) {
+      return ApiResponse.badRequest(res, "Mot de passe incorrect");
     }
+
+    // Révoquer les anciens tokens actifs
+    await Token.update(
+      { is_revoked: true },
+      {
+        where: {
+          user_id: admin.id,
+          is_revoked: false, // Ne traiter que les tokens encore actifs
+          expires_at: { [Op.gt]: new Date() } // Ne traiter que les tokens non expirés
+        }
+      }
+    );
+
+    // Générer un nouveau token via TokenManager
+    const token = await TokenManager.generateToken(admin);
+
+    // Réponse avec les détails de l'utilisateur et le token
+    return ApiResponse.success(res, "Connexion réussie", {
+      id: admin.id,
+      email: admin.email,
+      firstName: admin.first_name,
+      lastName: admin.last_name,
+      role: admin.role,
+      token
+    });
+
+  } catch (error) {
+    return ApiResponse.serverError(res, "Erreur serveur", error.message);
+  }
 });
 
 module.exports = router;

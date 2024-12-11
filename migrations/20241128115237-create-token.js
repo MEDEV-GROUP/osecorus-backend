@@ -59,8 +59,15 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     try {
+      // Supprimer la contrainte de clé étrangère avant de supprimer l'index
+      await queryInterface.removeConstraint('Tokens', 'tokens_user_id_fk').catch(() => {
+        console.log("La contrainte tokens_user_id_fk n'existe peut-être pas déjà");
+      });
+
       // Supprimer l'index
-      await queryInterface.removeIndex('Tokens', 'tokens_user_id_idx');
+      await queryInterface.removeIndex('Tokens', 'tokens_user_id_idx').catch(() => {
+        console.log("L'index tokens_user_id_idx n'existe peut-être pas déjà");
+      });
 
       // Supprimer la table
       await queryInterface.dropTable('Tokens');

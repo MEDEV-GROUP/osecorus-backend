@@ -31,17 +31,11 @@ module.exports = (sequelize, DataTypes) => {
     },
     media_url: {
       type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        isUrl: true // Assure que c'est une URL valide
-      }
+      allowNull: false
     },
     thumbnail_url: {
       type: DataTypes.STRING,
       allowNull: true,
-      validate: {
-        isUrl: true // Valide uniquement si une URL est fournie
-      }
     }
   }, {
     sequelize,
