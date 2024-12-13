@@ -1,39 +1,69 @@
 'use strict';
 const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class Log extends Model {
     static associate(models) {
-      // Define associations here if needed
+      // Définissez ici les associations nécessaires
+      this.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
     }
   }
+
   Log.init({
-    ip: {
-      type: DataTypes.STRING,
-      allowNull: false
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
     },
-    user_type: {
-      type: DataTypes.STRING,
-      allowNull: false
+    message: {
+      type: DataTypes.TEXT,
+      allowNull: true
     },
-    email: {
+    source: {
       type: DataTypes.STRING,
+      allowNull: true
+    },
+    user_id: {
+      type: DataTypes.UUID,
       allowNull: true
     },
     action: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true
     },
-    route: {
+    ip_address: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true
     },
-    request: {
+    request_data: {
       type: DataTypes.JSON,
-      allowNull: false
+      allowNull: true
     },
-    response: {
+    response_data: {
       type: DataTypes.JSON,
-      allowNull: false
+      allowNull: true
+    },
+    status: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    environment: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    device_info: {
+      type: DataTypes.JSON,
+      allowNull: true
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
     }
   }, {
     sequelize,
@@ -41,5 +71,6 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'Logs',
     underscored: true
   });
+
   return Log;
 };

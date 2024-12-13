@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 // Middleware pour enregistrer les logs des requêtes et réponses
-app.use(logRequestResponse);
+// app.use(logRequestResponse);
 
 // Configuration des dossiers statiques
 app.use(express.static(path.join(__dirname, 'public')));

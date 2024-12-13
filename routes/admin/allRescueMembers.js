@@ -3,14 +3,31 @@ const router = express.Router();
 const { User, RescueMember, RescueService, UserPhoto } = require('../../models');
 const ApiResponse = require('../../utils/ApiResponse'); // Réponses standardisées
 const { authenticate } = require('../../middlewares/authenticate'); // Middleware d'authentification
+const Logger = require('../../utils/Logger'); // Utilitaire pour les logs
 
 // Route pour récupérer tous les membres de secours
 router.get('/', authenticate(), async (req, res) => {
+  const logData = {
+    message: "",
+    source: "getRescueMembers",
+    userId: req.user?.id || null,
+    action: "Retrieve Rescue Members",
+    ipAddress: req.ip,
+    requestData: null,
+    responseData: null,
+    status: "PENDING",
+    deviceInfo: req.headers['user-agent'] || 'Unknown Device'
+  };
+
   const { user } = req;
 
   // Vérification du rôle d'administrateur
   if (user.role !== 'ADMIN') {
-    return ApiResponse.unauthorized(res, "Accès interdit : seuls les administrateurs peuvent effectuer cette action");
+    logData.message = "Accès interdit : seuls les administrateurs peuvent effectuer cette action";
+    logData.status = "FAILED";
+    await Logger.logEvent(logData);
+
+    return ApiResponse.unauthorized(res, logData.message);
   }
 
   try {
@@ -38,7 +55,12 @@ router.get('/', authenticate(), async (req, res) => {
     });
 
     if (rescueMembers.length === 0) {
-      return ApiResponse.success(res, "Aucun membre de secours trouvé", []);
+      logData.message = "Aucun membre de secours trouvé";
+      logData.status = "SUCCESS";
+      logData.responseData = [];
+      await Logger.logEvent(logData);
+
+      return ApiResponse.success(res, logData.message, []);
     }
 
     // Formater les données pour la réponse
@@ -65,10 +87,19 @@ router.get('/', authenticate(), async (req, res) => {
       isOnDuty: member.is_on_duty
     }));
 
-    return ApiResponse.success(res, "Liste des membres de secours récupérée avec succès", formattedMembers);
+    logData.message = "Liste des membres de secours récupérée avec succès";
+    logData.status = "SUCCESS";
+    logData.responseData = formattedMembers;
+    await Logger.logEvent(logData);
+
+    return ApiResponse.success(res, logData.message, formattedMembers);
   } catch (error) {
-    console.error('Erreur lors de la récupération des membres de secours:', error.message);
-    return ApiResponse.serverError(res, "Erreur lors de la récupération des membres de secours", error.message);
+    logData.message = "Erreur lors de la récupération des membres de secours";
+    logData.status = "FAILED";
+    logData.responseData = { error: error.message };
+    await Logger.logEvent(logData);
+
+    return ApiResponse.serverError(res, logData.message, error.message);
   }
 });
 

@@ -3,14 +3,31 @@ const router = express.Router();
 const { User, RescueMember, RescueService, UserPhoto } = require('../../models');
 const ApiResponse = require('../../utils/ApiResponse'); // Réponses standardisées
 const { authenticate } = require('../../middlewares/authenticate'); // Middleware d'authentification
+const Logger = require('../../utils/Logger'); // Utilitaire pour les logs
 
 // Route pour récupérer un membre de secours
 router.get('/:id', authenticate(), async (req, res) => {
+  const logData = {
+    message: "",
+    source: "getRescueMember",
+    userId: req.user?.id || null,
+    action: "Retrieve Rescue Member",
+    ipAddress: req.ip,
+    requestData: { rescueMemberId: req.params.id },
+    responseData: null,
+    status: "PENDING",
+    deviceInfo: req.headers['user-agent'] || 'Unknown Device'
+  };
+
   const { user } = req;
 
   // Vérification du rôle d'administrateur
   if (user.role !== 'ADMIN') {
-    return ApiResponse.unauthorized(res, "Accès interdit : seuls les administrateurs peuvent effectuer cette action");
+    logData.message = "Accès interdit : seuls les administrateurs peuvent effectuer cette action";
+    logData.status = "FAILED";
+    await Logger.logEvent(logData);
+
+    return ApiResponse.unauthorized(res, logData.message);
   }
 
   const { id } = req.params;
@@ -40,12 +57,18 @@ router.get('/:id', authenticate(), async (req, res) => {
     });
 
     if (!rescueMember) {
-      return ApiResponse.badRequest(res, "Membre de secours introuvable");
+      logData.message = "Membre de secours introuvable";
+      logData.status = "FAILED";
+      await Logger.logEvent(logData);
+
+      return ApiResponse.badRequest(res, logData.message);
     }
 
     const photoUrl = rescueMember.user?.photos?.[0]?.photo_url || null;
 
-    return ApiResponse.success(res, "Membre de secours récupéré avec succès", {
+    logData.message = "Membre de secours récupéré avec succès";
+    logData.status = "SUCCESS";
+    logData.responseData = {
       id: rescueMember.id,
       user: rescueMember.user ? {
         id: rescueMember.user.id,
@@ -55,7 +78,7 @@ router.get('/:id', authenticate(), async (req, res) => {
         phoneNumber: rescueMember.user.phone_number,
         role: rescueMember.user.role,
         isActive: rescueMember.user.is_active,
-        photoUrl // Ajouter l'URL de la photo au résultat
+        photoUrl
       } : null,
       service: rescueMember.service ? {
         id: rescueMember.service.id,
@@ -66,10 +89,17 @@ router.get('/:id', authenticate(), async (req, res) => {
       position: rescueMember.position,
       badgeNumber: rescueMember.badge_number,
       isOnDuty: rescueMember.is_on_duty
-    });
+    };
+    await Logger.logEvent(logData);
+
+    return ApiResponse.success(res, logData.message, logData.responseData);
   } catch (error) {
-    console.error('Erreur lors de la récupération du membre de secours:', error.message);
-    return ApiResponse.serverError(res, "Erreur lors de la récupération du membre de secours", error.message);
+    logData.message = "Erreur lors de la récupération du membre de secours";
+    logData.status = "FAILED";
+    logData.responseData = { error: error.message };
+    await Logger.logEvent(logData);
+
+    return ApiResponse.serverError(res, logData.message, error.message);
   }
 });
 

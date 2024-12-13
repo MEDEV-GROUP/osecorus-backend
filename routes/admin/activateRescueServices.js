@@ -3,13 +3,30 @@ const router = express.Router();
 const { RescueService } = require('../../models');
 const ApiResponse = require('../../utils/ApiResponse'); // Classe pour les réponses API
 const { authenticate } = require('../../middlewares/authenticate'); // Middleware d'authentification
+const Logger = require('../../utils/Logger'); // Utilitaire pour les logs
 
 // Route pour activer un service
 router.patch('/:id', authenticate(), async (req, res) => {
+  const logData = {
+    message: "",
+    source: "activateRescueService",
+    userId: req.user?.id || null,
+    action: "Activate Rescue Service",
+    ipAddress: req.ip,
+    requestData: { rescueServiceId: req.params.id },
+    responseData: null,
+    status: "PENDING",
+    deviceInfo: req.headers['user-agent'] || 'Unknown Device'
+  };
+
   // Vérification du rôle de l'utilisateur
   const { user } = req;
   if (user.role !== 'ADMIN') {
-    return ApiResponse.unauthorized(res, "Accès interdit : seuls les administrateurs peuvent effectuer cette action");
+    logData.message = "Accès interdit : seuls les administrateurs peuvent effectuer cette action";
+    logData.status = "FAILED";
+    await Logger.logEvent(logData);
+
+    return ApiResponse.unauthorized(res, logData.message);
   }
 
   const { id } = req.params;
@@ -19,24 +36,42 @@ router.patch('/:id', authenticate(), async (req, res) => {
     const rescueService = await RescueService.findByPk(id);
 
     if (!rescueService) {
-      return ApiResponse.badRequest(res, "Service de secours introuvable");
+      logData.message = "Service de secours introuvable";
+      logData.status = "FAILED";
+      await Logger.logEvent(logData);
+
+      return ApiResponse.badRequest(res, logData.message);
     }
 
     if (rescueService.is_active) {
-      return ApiResponse.badRequest(res, "Ce service est déjà actif");
+      logData.message = "Ce service est déjà actif";
+      logData.status = "FAILED";
+      await Logger.logEvent(logData);
+
+      return ApiResponse.badRequest(res, logData.message);
     }
 
     // Activer le service
     rescueService.is_active = true;
     await rescueService.save();
 
-    return ApiResponse.success(res, "Service de secours activé avec succès", {
+    logData.message = "Service de secours activé avec succès";
+    logData.status = "SUCCESS";
+    logData.responseData = {
       id: rescueService.id,
       name: rescueService.name,
       isActive: rescueService.is_active
-    });
+    };
+    await Logger.logEvent(logData);
+
+    return ApiResponse.success(res, logData.message, logData.responseData);
   } catch (error) {
-    return ApiResponse.serverError(res, "Erreur lors de l'activation du service de secours", error.message);
+    logData.message = "Erreur lors de l'activation du service de secours";
+    logData.status = "FAILED";
+    logData.responseData = { error: error.message };
+    await Logger.logEvent(logData);
+
+    return ApiResponse.serverError(res, logData.message, error.message);
   }
 });
 

@@ -55,7 +55,7 @@ router.post('/', async (req, res) => {
       await client.messages.create({
         body: `Votre code OTP est : ${otp}. Il est valable pendant 5 minutes.`,
         from: twilioPhoneNumber,
-        to: "+2250759670150"
+        to: "+225" + phoneNumber
       });
 
       return ApiResponse.created(res, "OTP créé et envoyé avec succès", {
@@ -77,7 +77,7 @@ router.post('/', async (req, res) => {
       await client.messages.create({
         body: `Votre nouveau code OTP est : ${otp}. Il est valable pendant 5 minutes.`,
         from: twilioPhoneNumber,
-        to: '+2250759670150'
+        to: "+225" + phoneNumber
       });
 
       return ApiResponse.success(res, "OTP régénéré et envoyé avec succès", {

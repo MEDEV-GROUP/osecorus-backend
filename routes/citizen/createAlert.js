@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');  // Ajout de cette ligne
+const fs = require('fs'); // Gestion des fichiers
 const { Alert, AlertMedia } = require('../../models');
 const { verifyMultipartData } = require('../../config/utils');
 const ApiResponse = require('../../utils/ApiResponse'); // Réponses standardisées
 const { authenticate } = require('../../middlewares/authenticate'); // Middleware d'authentification
+const Logger = require('../../utils/Logger'); // Utilitaire pour les logs
 const upload = require('../../config/multer');
 
 // Configuration pour les champs de fichiers multiples
@@ -15,31 +16,44 @@ const uploadFields = upload.fields([
 ]);
 
 router.post('/', authenticate(), uploadFields, async (req, res) => {
-    const { user } = req;
-    if (user.role !== 'CITIZEN') {
-        return ApiResponse.unauthorized(res, "Accès interdit : seuls les Citoyens peuvent effectuer cette action");
-    }
-
-    const requiredFields = ["location_lat", "location_lng", "description"];
-    const verify = verifyMultipartData(req, requiredFields);
-
-
-
-    if (!verify.isValid) {
-        return res.status(400).json({
-            message: "Champs requis manquants",
-            data: {
-                missingFields: verify.missingFields
-            }
-        });
-    }
+    const logData = {
+        message: "",
+        source: "createAlert",
+        userId: req.user?.id || null,
+        action: "Create Alert",
+        ipAddress: req.ip,
+        requestData: req.body || null,
+        responseData: null,
+        status: "PENDING",
+        deviceInfo: req.headers['user-agent'] || 'Unknown Device'
+    };
 
     try {
+        const { user } = req;
+
+        if (user.role !== 'CITIZEN') {
+            logData.message = "Accès interdit : seuls les Citoyens peuvent effectuer cette action";
+            logData.status = "FAILED";
+            await Logger.logEvent(logData);
+            return ApiResponse.unauthorized(res, logData.message);
+        }
+
+        const requiredFields = ["location_lat", "location_lng", "description"];
+        const verify = verifyMultipartData(req, requiredFields);
+
+        if (!verify.isValid) {
+            logData.message = "Champs requis manquants";
+            logData.status = "FAILED";
+            logData.responseData = { missingFields: verify.missingFields };
+            await Logger.logEvent(logData);
+            return ApiResponse.badRequest(res, logData.message, logData.responseData);
+        }
+
         const { location_lat, location_lng, description } = req.body;
 
         // Création de l'alerte
         const alert = await Alert.create({
-            reporter_id: req.user.id,
+            reporter_id: user.id,
             location_lat,
             location_lng,
             description,
@@ -50,14 +64,12 @@ router.post('/', authenticate(), uploadFields, async (req, res) => {
         const mediaPromises = [];
         const files = req.files;
 
-        // Traiter chaque fichier s'il existe
         ['files1', 'files2', 'files3'].forEach(fieldName => {
             if (files[fieldName] && files[fieldName][0]) {
                 const file = files[fieldName][0];
                 const isImage = file.mimetype.startsWith('image/');
                 const mediaType = isImage ? 'PHOTO' : 'VIDEO';
 
-                // Construire le chemin relatif
                 const relativePath = `uploads/${isImage ? 'pictures' : 'videos'}/${file.filename}`;
 
                 mediaPromises.push(
@@ -84,13 +96,16 @@ router.post('/', authenticate(), uploadFields, async (req, res) => {
             }]
         });
 
+        logData.message = "Nouvelle alerte créée avec succès";
+        logData.status = "SUCCESS";
+        logData.responseData = alertWithMedia;
+
         res.status(201).json({
-            message: "Alerte créée avec succès",
+            message: logData.message,
             data: alertWithMedia
         });
 
     } catch (error) {
-        // Supprimer les fichiers en cas d'erreur
         const files = req.files;
         if (files) {
             ['files1', 'files2', 'files3'].forEach(fieldName => {
@@ -100,10 +115,17 @@ router.post('/', authenticate(), uploadFields, async (req, res) => {
             });
         }
 
+        logData.message = "Erreur lors de la création de l'alerte";
+        logData.status = "FAILED";
+        logData.responseData = { error: error.message };
+
         res.status(500).json({
-            message: "Erreur lors de la création de l'alerte",
+            message: logData.message,
             data: error.message
         });
+    } finally {
+        // Enregistrement du log à la fin de l'exécution
+        await Logger.logEvent(logData);
     }
 });
 
