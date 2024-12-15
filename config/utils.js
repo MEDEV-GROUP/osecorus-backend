@@ -6,37 +6,33 @@ const { Token, Key } = require('../models');
 
 class Utils {
 
-static verifyRequestData(body, requiredFields) {
-  const missingFields = requiredFields.filter(field => 
-      !(field in body) || 
-      body[field] === undefined || 
+  static verifyRequestData(body, requiredFields) {
+    const missingFields = requiredFields.filter(field =>
+      !(field in body) ||
+      body[field] === undefined ||
       body[field] === ''
-  );
+    );
 
-  return {
+    return {
       isValid: missingFields.length === 0,
       missingFields: missingFields.length > 0 ? missingFields : undefined
-  };
-}
+    };
+  }
 
-// Utiliser verifyMultipartData
-static verifyMultipartData(req, requiredFields) {
-  // Vérifie req.body pour les champs texte
-  const missingFields = requiredFields.filter(field => 
-      !(field in req.body) || 
-      req.body[field] === undefined || 
-      req.body[field] === ''
-  );
+  // Utiliser verifyMultipartData
+  static verifyMultipartData(req, requiredFields) {
+    // Vérification des champs texte dans req.body
+    const missingFields = requiredFields.filter(
+      (field) => !(field in req.body) || req.body[field] === undefined || req.body[field] === ''
+    );
 
-  // Vérifie aussi req.files pour les fichiers
-  const files = req.files || {};
-  
-  return {
+    return {
       isValid: missingFields.length === 0,
       missingFields: missingFields.length > 0 ? missingFields : undefined,
-      filesInfo: files // information sur les fichiers reçus
-  };
-}
+    };
+  }
+
+
 
   static verifyRequestDataForUpdate(body, allowedFields) {
     const invalidFields = Object.keys(body).filter(field => !allowedFields.includes(field));

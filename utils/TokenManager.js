@@ -16,7 +16,14 @@ class TokenManager {
       role: user.role
     };
 
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    // Déterminer la durée d'expiration du token
+    const expiresIn = user.role === 'CITIZEN' ? '1y' : JWT_EXPIRES_IN;
+    const expirationMilliseconds = user.role === 'CITIZEN'
+      ? 365 * 24 * 60 * 60 * 1000 // 1 an en millisecondes
+      : this._getExpirationMilliseconds(JWT_EXPIRES_IN);
+
+    // Générer le token JWT
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn });
 
     // Enregistrer le token dans la base de données
     await Token.create({
@@ -24,11 +31,12 @@ class TokenManager {
       token,
       type: 'ACCESS', // Vous pouvez gérer différents types de tokens ici (par ex. ACCESS, REFRESH)
       is_revoked: false,
-      expires_at: new Date(Date.now() + this._getExpirationMilliseconds(JWT_EXPIRES_IN))
+      expires_at: new Date(Date.now() + expirationMilliseconds)
     });
 
     return token;
   }
+
 
   /**
    * Vérifie un token JWT.

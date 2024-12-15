@@ -8,8 +8,6 @@ var cors = require('cors');  // N'oubliez pas d'installer cors
 const AdminController = require('./controllers/AdminController');
 const CitizenController = require('./controllers/CitizenController');
 
-// Import du middleware pour les logs
-const { logRequestResponse } = require('./middlewares/logRequestResponse');
 
 
 var app = express();
