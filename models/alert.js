@@ -44,13 +44,17 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     status: {
-      type: DataTypes.ENUM('PENDING', 'ACCEPTED', 'IN_PROGRESS', 'RESOLVED'),
-      defaultValue: 'PENDING',
+      type: DataTypes.ENUM('EN_ATTENTE', 'ACCEPTEE', 'EN_COURS', 'RESOLUE'),
+      defaultValue: 'EN_ATTENTE',
       allowNull: false
     },
     description: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    category: {
+      type: DataTypes.ENUM('Accidents', 'Incendies', 'Inondations', 'Malaises', 'Noyade', 'Autre'),
+      allowNull: false
     },
     address: {
       type: DataTypes.STRING,
