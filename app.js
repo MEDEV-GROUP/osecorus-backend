@@ -25,9 +25,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// Middleware pour enregistrer les logs des requêtes et réponses
-// app.use(logRequestResponse);
-
 // Configuration des dossiers statiques
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Pour accéder aux fichiers uploadés

@@ -38,7 +38,8 @@ router.post('/', authenticate(), uploadFields, async (req, res) => {
             return ApiResponse.unauthorized(res, logData.message);
         }
 
-        const requiredFields = ["location_lat", "location_lng", "description"];
+        // Champs requis
+        const requiredFields = ["location_lat", "location_lng", "description", "category"];
         const verify = verifyMultipartData(req, requiredFields);
 
         if (!verify.isValid) {
@@ -49,7 +50,16 @@ router.post('/', authenticate(), uploadFields, async (req, res) => {
             return ApiResponse.badRequest(res, logData.message, logData.responseData);
         }
 
-        const { location_lat, location_lng, description } = req.body;
+        const { location_lat, location_lng, description, category } = req.body;
+
+        // Vérification des catégories valides
+        const validCategories = ['Accidents', 'Incendies', 'Inondations', 'Malaises', 'Noyade', 'Autre'];
+        if (!validCategories.includes(category)) {
+            logData.message = `La catégorie '${category}' est invalide. Les catégories valides sont : ${validCategories.join(", ")}`;
+            logData.status = "FAILED";
+            await Logger.logEvent(logData);
+            return ApiResponse.badRequest(res, logData.message);
+        }
 
         // Création de l'alerte
         const alert = await Alert.create({
@@ -57,7 +67,8 @@ router.post('/', authenticate(), uploadFields, async (req, res) => {
             location_lat,
             location_lng,
             description,
-            status: 'PENDING'
+            category,
+            status: 'EN_ATTENTE' // Mise à jour pour refléter les nouveaux statuts
         });
 
         // Traitement des fichiers médias

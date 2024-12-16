@@ -93,10 +93,6 @@ module.exports = {
         console.log("L'index category n'existe peut-être pas déjà");
       });
 
-      // Supprimer les valeurs ENUM ajoutées (important pour éviter des erreurs si la migration est rejouée)
-      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Alerts_status";');
-      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Alerts_category";');
-
       // Supprimer la table
       await queryInterface.dropTable('Alerts');
     } catch (error) {
