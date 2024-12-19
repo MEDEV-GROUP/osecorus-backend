@@ -72,6 +72,13 @@ router.post('/', async (req, res) => {
       is_active: false // Statut inactif par défaut
     });
 
+    const photoUrl = "uploads/others/avatar.png"
+
+    const userPhoto = await UserPhoto.create({
+      user_id: newUser.id,
+      photo_url: photoUrl
+    });
+
     logData.message = "Utilisateur enregistré avec succès";
     logData.status = "SUCCESS";
     logData.responseData = {
@@ -80,6 +87,7 @@ router.post('/', async (req, res) => {
       lastName: newUser.last_name,
       phoneNumber: newUser.phone_number,
       role: newUser.role,
+      photo_url: photoUrl,
       isActive: newUser.is_active
     };
     logData.userId = newUser.id;
