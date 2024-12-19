@@ -50,7 +50,7 @@ router.get('/', authenticate(), async (req, res) => {
                 {
                     model: User,
                     as: 'reporter',
-                    attributes: ['id', 'first_name', 'last_name', 'email', ]
+                    attributes: ['id', 'first_name', 'last_name', 'phone_number', 'email', ]
                 },
                 {
                     model: AlertMedia,
