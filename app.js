@@ -28,6 +28,7 @@ app.use(cookieParser());
 // Configuration des dossiers statiques
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Pour accéder aux fichiers uploadés
+app.use('/others', express.static(path.join(__dirname, 'uploads'))); // Pour accéder aux fichiers uploadés
 
 // Routes des controllers
 app.use('/admin', (req, res, next) => {

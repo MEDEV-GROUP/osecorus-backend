@@ -72,7 +72,7 @@ router.post('/', async (req, res) => {
       is_active: false // Statut inactif par défaut
     });
 
-    const photoUrl = "uploads/others/avatar.png"
+    const photoUrl = "others/avatar.png"
 
     const userPhoto = await UserPhoto.create({
       user_id: newUser.id,
