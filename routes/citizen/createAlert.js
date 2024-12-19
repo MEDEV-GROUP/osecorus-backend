@@ -39,7 +39,7 @@ router.post('/', authenticate(), uploadFields, async (req, res) => {
         }
 
         // Champs requis
-        const requiredFields = ["location_lat", "location_lng", "description", "category"];
+        const requiredFields = ["location_lat", "location_lng", "description", "address", "category"];
         const verify = verifyMultipartData(req, requiredFields);
 
         if (!verify.isValid) {
@@ -50,7 +50,7 @@ router.post('/', authenticate(), uploadFields, async (req, res) => {
             return ApiResponse.badRequest(res, logData.message, logData.responseData);
         }
 
-        const { location_lat, location_lng, description, category } = req.body;
+        const { location_lat, location_lng, description, category, address } = req.body;
 
         // Vérification des catégories valides
         const validCategories = ['Accidents', 'Incendies', 'Inondations', 'Malaises', 'Noyade', 'Autre'];
@@ -66,6 +66,7 @@ router.post('/', authenticate(), uploadFields, async (req, res) => {
             reporter_id: user.id,
             location_lat,
             location_lng,
+            address,
             description,
             category,
             status: 'EN_ATTENTE' // Mise à jour pour refléter les nouveaux statuts
