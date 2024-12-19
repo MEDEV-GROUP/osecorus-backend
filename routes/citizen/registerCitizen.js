@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { User } = require('../../models');
+const { User, UserPhoto } = require('../../models');
 const { verifyRequestData, cryptWithBcrypt } = require('../../config/utils'); // Utilitaires pour validation et hachage
 const ApiResponse = require('../../utils/ApiResponse'); // Classe pour les réponses API
 const Logger = require('../../utils/Logger'); // Utilitaire pour les logs
