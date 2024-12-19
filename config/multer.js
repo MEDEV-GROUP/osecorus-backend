@@ -30,8 +30,10 @@ const storage = multer.diskStorage({
 
 // Filtrage des fichiers avec validation des extensions
 const fileFilter = (req, file, cb) => {
+    console.log('MIME type détecté:', file.mimetype);
     const allowedMimeTypes = [
         'image/jpeg',
+        'image/jpg',
         'image/png',
         'image/gif',
         'video/mp4',
@@ -41,7 +43,7 @@ const fileFilter = (req, file, cb) => {
     if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Format de fichier non supporté. Seuls JPEG, PNG, GIF, MP4 et MKV sont autorisés.'), false);
+        cb(new Error('Format de fichier non supporté. Seuls JPEG, PNG, GIF, JPG MP4 et MKV sont autorisés.'), false);
     }
 };
 

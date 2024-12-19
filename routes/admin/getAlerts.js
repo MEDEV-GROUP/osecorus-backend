@@ -50,7 +50,7 @@ router.get('/', authenticate(), async (req, res) => {
                 {
                     model: User,
                     as: 'reporter',
-                    attributes: ['id', 'first_name', 'last_name', 'email']
+                    attributes: ['id', 'first_name', 'last_name', 'email', ]
                 },
                 {
                     model: AlertMedia,
@@ -72,7 +72,7 @@ router.get('/', authenticate(), async (req, res) => {
         await Logger.logEvent(logData);
 
         return ApiResponse.success(res, logData.message, {
-            total: alerts.count / 2,
+            total: alerts.count,
             data: alerts.rows
         });
     } catch (error) {
