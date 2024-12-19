@@ -3,7 +3,7 @@ const axios = require('axios');
 const router = express.Router();
 const ApiResponse = require('../../utils/ApiResponse'); // Classe pour formater les réponses
 
-router.post('/reverse-geocode', async (req, res) => {
+router.post('/', async (req, res) => {
     const { lat, lon } = req.body;
 
     // Validation des entrées
