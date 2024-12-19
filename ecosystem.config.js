@@ -14,7 +14,7 @@ module.exports = {
             },
             instances: 'max', // Nombre d'instances (1 = mode fork, >1 = mode cluster)
             exec_mode: 'cluster', // Mode fork ou cluster
-            watch: false, // Désactivez le watch pour un serveur de production
+            watch: false, // Désactivez le watch pour un serveur de production 
         },
     ],
 };
