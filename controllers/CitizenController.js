@@ -14,6 +14,7 @@ const addEmail = require('../routes/' + service + '/addEmail');
 const createSafeNumbers = require('../routes/' + service + '/createSafeNumbers');
 const deleteSafeNumbers = require('../routes/' + service + '/deleteSafeNumbers');
 const getSafeNumbers = require('../routes/' + service + '/getSafeNumbers');
+const reverse = require('../routes/' + service + '/reverse');
 
 
 
@@ -29,6 +30,8 @@ router.use('/add-email', addEmail);
 router.use('/safe-numbers', createSafeNumbers);
 router.use('/safe-numbers', deleteSafeNumbers);
 router.use('/safe-numbers', getSafeNumbers);
+
+router.use('/reverse-geocode', reverse);
 
 
 module.exports = router;
