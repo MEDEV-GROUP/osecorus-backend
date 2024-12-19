@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Alert, User, AlertMedia } = require('../../models');
+const { Alert, User, AlertMedia, UserPhoto } = require('../../models');
 const { authenticate } = require('../../middlewares/authenticate');
 const ApiResponse = require('../../utils/ApiResponse');
 const Logger = require('../../utils/Logger');
@@ -31,10 +31,10 @@ router.get('/', authenticate(), async (req, res) => {
         }
 
         // Pagination
-        const limit = parseInt(req.query.limit, 10) || 10; // Nombre maximum d'alertes par page
-        const offset = parseInt(req.query.offset, 10) || 0; // Décalage pour la pagination
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const offset = parseInt(req.query.offset, 10) || 0;
 
-        // Filtrage optionnel (exemple: par catégorie ou par statut)
+        // Filtrage optionnel
         const filters = {};
         if (req.query.category) {
             filters.category = req.query.category;
@@ -50,7 +50,15 @@ router.get('/', authenticate(), async (req, res) => {
                 {
                     model: User,
                     as: 'reporter',
-                    attributes: ['id', 'first_name', 'last_name', 'phone_number', 'email', ]
+                    attributes: ['id', 'first_name', 'last_name', 'phone_number', 'email'],
+                    include: [
+                        {
+                            model: UserPhoto,
+                            as: 'photos',
+                            attributes: ['photo_url'], // Récupère l'URL de la photo
+                            limit: 1 // Limite à une seule photo par utilisateur
+                        }
+                    ]
                 },
                 {
                     model: AlertMedia,
