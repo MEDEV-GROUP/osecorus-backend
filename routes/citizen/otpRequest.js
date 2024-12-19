@@ -3,6 +3,7 @@ const router = express.Router();
 const { CitizenOtp, User } = require('../../models');
 const { verifyRequestData } = require('../../config/utils'); // Utilitaire pour valider les champs soumis
 const ApiResponse = require('../../utils/ApiResponse'); // Réponses standardisées
+const Logger = require('../../utils/Logger'); // Utilitaire pour les logs
 const twilio = require('twilio');
 
 // Configuration Twilio
@@ -15,82 +16,119 @@ const client = twilio(accountSid, authToken);
 const generateOtp = () => Math.floor(10000 + Math.random() * 90000).toString(); // OTP à 5 chiffres
 
 router.post('/', async (req, res) => {
+  const logData = {
+    message: "",
+    source: "manageOTP",
+    userId: null,
+    action: "Manage OTP",
+    ipAddress: req.ip,
+    requestData: req.body,
+    responseData: null,
+    status: "PENDING",
+    deviceInfo: req.headers['user-agent'] || 'Unknown Device'
+  };
+
   const requiredFields = ['type', 'phoneNumber'];
   const verify = verifyRequestData(req.body, requiredFields);
 
   if (!verify.isValid) {
-    return ApiResponse.badRequest(res, "Champs requis manquants", { missingFields: verify.missingFields });
+    logData.message = "Champs requis manquants";
+    logData.status = "FAILED";
+    await Logger.logEvent(logData);
+
+    return ApiResponse.badRequest(res, logData.message, { missingFields: verify.missingFields });
   }
 
   const { type, phoneNumber } = req.body;
 
   try {
-    // Vérifier si le numéro existe dans la table User et qu'il est lié à un Citizen
+    // Vérification de l'utilisateur
     const user = await User.findOne({ where: { phone_number: phoneNumber, role: 'CITIZEN' } });
-
     if (!user) {
-      return ApiResponse.badRequest(res, "Numéro de téléphone introuvable ou non associé à un Citoyen");
+      logData.message = "Numéro de téléphone introuvable ou non associé à un Citoyen";
+      logData.status = "FAILED";
+      await Logger.logEvent(logData);
+
+      return ApiResponse.badRequest(res, logData.message);
     }
 
-    // Vérifier si un OTP existe déjà pour ce numéro
-    let otpRecord = await CitizenOtp.findOne({ where: { phone_number: phoneNumber } });
+    logData.userId = user.id;
 
+    // Récupérer ou créer l'OTP
+    let otpRecord = await CitizenOtp.findOne({ where: { phone_number: phoneNumber } });
     if (type === 'create') {
       if (otpRecord) {
-        return ApiResponse.badRequest(res, "Un OTP existe déjà pour ce numéro. Utilisez le type 'resend' pour régénérer.");
+        logData.message = "Un OTP existe déjà pour ce numéro. Utilisez le type 'resend'.";
+        logData.status = "FAILED";
+        await Logger.logEvent(logData);
+
+        return ApiResponse.badRequest(res, logData.message);
       }
 
-      // Générer un nouvel OTP
-      const otp = generateOtp();
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // Valable pendant 5 minutes
-
-      // Créer l'enregistrement OTP
       otpRecord = await CitizenOtp.create({
         phone_number: phoneNumber,
-        otp,
-        expires_at: expiresAt
+        otp: generateOtp(),
+        expires_at: new Date(Date.now() + 5 * 60 * 1000)
       });
 
-      // Envoyer le SMS via Twilio
-      await client.messages.create({
-        body: `Votre code OTP est : ${otp}. Il est valable pendant 5 minutes.`,
-        from: twilioPhoneNumber,
-        to: "+225" + phoneNumber
-      });
-
-      return ApiResponse.created(res, "OTP créé et envoyé avec succès", {
-        phoneNumber: otpRecord.phone_number,
-        expiresAt: otpRecord.expires_at
-      });
-
+      logData.action = "Create OTP";
+      logData.message = "OTP créé avec succès";
     } else if (type === 'resend') {
       if (!otpRecord) {
-        return ApiResponse.badRequest(res, "Aucun OTP n'existe pour ce numéro. Utilisez le type 'create' pour en générer un.");
+        logData.message = "Aucun OTP n'existe pour ce numéro. Utilisez le type 'create'.";
+        logData.status = "FAILED";
+        await Logger.logEvent(logData);
+
+        return ApiResponse.badRequest(res, logData.message);
       }
 
-      // Générer un nouvel OTP et mettre à jour l'enregistrement existant
-      const otp = generateOtp();
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // Valable pendant 5 minutes
-      await otpRecord.update({ otp, expires_at: expiresAt });
+      await otpRecord.update({
+        otp: generateOtp(),
+        expires_at: new Date(Date.now() + 5 * 60 * 1000)
+      });
 
-      // Envoyer le SMS via Twilio
+      logData.action = "Resend OTP";
+      logData.message = "OTP régénéré avec succès";
+    } else {
+      logData.message = "Type d'opération invalide. Utilisez 'create' ou 'resend'.";
+      logData.status = "FAILED";
+      await Logger.logEvent(logData);
+
+      return ApiResponse.badRequest(res, logData.message);
+    }
+
+    // Envoi du SMS via Twilio
+    try {
       await client.messages.create({
-        body: `Votre nouveau code OTP est : ${otp}. Il est valable pendant 5 minutes.`,
+        body: `Votre code OTP est : ${otpRecord.otp}. Il est valable pendant 5 minutes.`,
         from: twilioPhoneNumber,
         to: "+225" + phoneNumber
       });
 
-      return ApiResponse.success(res, "OTP régénéré et envoyé avec succès", {
+      logData.status = "SUCCESS";
+      logData.responseData = {
         phoneNumber: otpRecord.phone_number,
         expiresAt: otpRecord.expires_at
-      });
-    } else {
-      return ApiResponse.badRequest(res, "Type d'opération invalide. Utilisez 'create' ou 'resend'.");
-    }
+      };
+      logData.message += " et SMS envoyé avec succès.";
+      await Logger.logEvent(logData);
 
+      return ApiResponse.success(res, logData.message, logData.responseData);
+    } catch (smsError) {
+      logData.status = "FAILED";
+      logData.responseData = { error: smsError.message };
+      logData.message = "Erreur lors de l'envoi du SMS.";
+      await Logger.logEvent(logData);
+
+      return ApiResponse.serverError(res, logData.message, smsError.message);
+    }
   } catch (error) {
-    console.error("Erreur lors de la gestion de l'OTP:", error.message);
-    return ApiResponse.serverError(res, "Erreur serveur lors de la gestion de l'OTP", error.message);
+    logData.status = "FAILED";
+    logData.responseData = { error: error.message };
+    logData.message = "Erreur lors de la gestion de l'OTP.";
+    await Logger.logEvent(logData);
+
+    return ApiResponse.serverError(res, logData.message, error.message);
   }
 });
 
