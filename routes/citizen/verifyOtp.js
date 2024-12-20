@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { CitizenOtp, User } = require('../../models');
+const { CitizenOtp, User, UserPhoto } = require('../../models');
 const { verifyRequestData } = require('../../config/utils'); // Utilitaire pour valider les champs soumis
 const ApiResponse = require('../../utils/ApiResponse'); // Réponses standardisées
 const TokenManager = require('../../utils/TokenManager'); // Classe pour gérer les tokens
@@ -36,7 +36,16 @@ router.post('/', async (req, res) => {
 
   try {
     // Vérifier si l'utilisateur Citizen existe avec ce numéro
-    const user = await User.findOne({ where: { phone_number: phoneNumber, role: 'CITIZEN' } });
+    const user = await User.findOne({
+      where: { phone_number: phoneNumber, role: 'CITIZEN' },
+      include: [
+        {
+          model: UserPhoto,
+          as: 'photos',
+          attributes: ['photo_url']
+        }
+      ]
+    });
 
     if (!user) {
       logData.message = "Numéro de téléphone introuvable ou non associé à un Citizen";
@@ -87,6 +96,9 @@ router.post('/', async (req, res) => {
     // Générer un token JWT pour l'utilisateur
     const token = await TokenManager.generateToken(user);
 
+    // Obtenir l'URL de la première photo si disponible
+    const photoUrl = user.photos?.length ? user.photos[0].photo_url : null;
+
     // Log du succès
     logData.message = "OTP vérifié avec succès";
     logData.status = "SUCCESS";
@@ -97,7 +109,8 @@ router.post('/', async (req, res) => {
         lastName: user.last_name,
         phoneNumber: user.phone_number,
         role: user.role,
-        isActive: user.is_active
+        isActive: user.is_active,
+        photoUrl
       },
       token
     };
