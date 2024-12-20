@@ -21,7 +21,7 @@ router.post('/', authenticate(), async (req, res) => {
 
     try {
         const { user } = req;
-        const { title, content } = req.body;
+        const { title, content, level } = req.body;
 
         // Vérification du rôle de l'utilisateur
         if (user.role !== 'ADMIN') {
@@ -33,7 +33,7 @@ router.post('/', authenticate(), async (req, res) => {
         }
 
         // Validation des champs requis
-        const requiredFields = ["title", "content"];
+        const requiredFields = ["title", "content", "level"];
         const verify = verifyRequestData(req.body, requiredFields);
 
         if (!verify.isValid) {
@@ -49,7 +49,8 @@ router.post('/', authenticate(), async (req, res) => {
         const message = await AdminMessage.create({
             admin_id: user.id,
             title,
-            content
+            content,
+            level
         });
 
         logData.message = "Message publié avec succès";
@@ -58,6 +59,7 @@ router.post('/', authenticate(), async (req, res) => {
             id: message.id,
             title: message.title,
             content: message.content,
+            level: message.level,
             created_at: message.createdAt
         };
         await Logger.logEvent(logData);
