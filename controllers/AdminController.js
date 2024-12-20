@@ -17,6 +17,7 @@ const rescueMember = require('../routes/' + service + '/rescueMember');
 const allRescueMembers = require('../routes/' + service + '/allRescueMembers');
 const publishMessage = require('../routes/' + service + '/publishMessage');
 const getAlerts = require('../routes/' + service + '/getAlerts');
+const getAllMessages = require('../routes/' + service + '/getAllMessages');
 
 
 
@@ -33,7 +34,9 @@ router.use('/soft-delete-rescue-member', softDeleteRescueMember);
 router.use('/rescue-member', rescueMember);
 router.use('/all-rescue-members', allRescueMembers);
 router.use('/publish-message', publishMessage);
+router.use('/get-all-message', getAllMessages);
 router.use('/all-alerts', getAlerts);
+
 
 
 module.exports = router;
