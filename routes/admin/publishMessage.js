@@ -1,17 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const { AdminMessage } = require('../../models');
+const { AdminMessage, User } = require('../../models');
 const ApiResponse = require('../../utils/ApiResponse');
 const Logger = require('../../utils/Logger');
-const { authenticate } = require('../../middlewares/authenticate'); // Middleware pour vérifier l'authentification
-const { verifyRequestData } = require('../../config/utils'); // Utilitaire de validation
+const { authenticate } = require('../../middlewares/authenticate');
+const { verifyRequestData } = require('../../config/utils');
+const twilio = require('twilio');
+
+// Configuration Twilio
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+const client = twilio(accountSid, authToken);
 
 router.post('/', authenticate(), async (req, res) => {
     const logData = {
         message: "",
         source: "publishAdminMessage",
         userId: req.user?.id || null,
-        action: "Publish Message",
+        action: "Publish Message and Notify",
         ipAddress: req.ip,
         requestData: req.body,
         responseData: null,
@@ -54,7 +61,6 @@ router.post('/', authenticate(), async (req, res) => {
         });
 
         logData.message = "Message publié avec succès";
-        logData.status = "SUCCESS";
         logData.responseData = {
             id: message.id,
             title: message.title,
@@ -62,11 +68,36 @@ router.post('/', authenticate(), async (req, res) => {
             level: message.level,
             created_at: message.createdAt
         };
-        await Logger.logEvent(logData);
 
+        // Récupérer tous les utilisateurs Citizen
+        const citizens = await User.findAll({
+            where: { role: 'CITIZEN' },
+            attributes: ['phone_number']
+        });
+
+        // Envoi du SMS à chaque utilisateur
+        const sendSmsPromises = citizens.map((citizen) =>
+            client.messages.create({
+                body: `Nouveau message de l'administrateur : ${title} - ${content}`,
+                from: twilioPhoneNumber,
+                to: "+225" + citizen.phone_number
+            })
+        );
+
+        try {
+            await Promise.all(sendSmsPromises);
+            logData.message += " et notifications SMS envoyées avec succès.";
+            logData.status = "SUCCESS";
+        } catch (smsError) {
+            logData.message += " mais erreur lors de l'envoi des notifications SMS.";
+            logData.responseData.smsError = smsError.message;
+            logData.status = "PARTIAL_SUCCESS";
+        }
+
+        await Logger.logEvent(logData);
         return ApiResponse.created(res, logData.message, logData.responseData);
     } catch (error) {
-        logData.message = "Erreur lors de la publication du message";
+        logData.message = "Erreur lors de la publication du message ou des notifications.";
         logData.status = "FAILED";
         logData.responseData = { error: error.message };
         await Logger.logEvent(logData);

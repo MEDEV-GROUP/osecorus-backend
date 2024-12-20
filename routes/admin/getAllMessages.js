@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { AdminMessage, User } = require('../../models');
+const Logger = require('../../utils/Logger'); // Utilitaire pour les logs
 const ApiResponse = require('../../utils/ApiResponse');
 const { authenticate } = require('../../middlewares/authenticate');
 
