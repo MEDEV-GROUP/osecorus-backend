@@ -44,7 +44,7 @@ router.post('/', authenticate(), uploadSingle, async (req, res) => {
 
   try {
     // Enregistrer l'image dans la base de données
-    const photoUrl = `uploads/photos/${req.file.filename}`;
+    const photoUrl = `uploads/pictures/${req.file.filename}`;
     const userPhoto = await UserPhoto.create({
       user_id: user.id,
       photo_url: photoUrl
