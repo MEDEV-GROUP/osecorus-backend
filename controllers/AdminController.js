@@ -18,6 +18,7 @@ const allRescueMembers = require('../routes/' + service + '/allRescueMembers');
 const publishMessage = require('../routes/' + service + '/publishMessage');
 const getAlerts = require('../routes/' + service + '/getAlerts');
 const getAllMessages = require('../routes/' + service + '/getAllMessages');
+const dashboard = require('../routes/' + service + '/dashboard');
 
 
 
@@ -36,6 +37,7 @@ router.use('/all-rescue-members', allRescueMembers);
 router.use('/publish-message', publishMessage);
 router.use('/get-all-message', getAllMessages);
 router.use('/all-alerts', getAlerts);
+router.use('/dashboard', dashboard);
 
 
 
