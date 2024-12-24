@@ -7,6 +7,7 @@ var cors = require('cors');  // N'oubliez pas d'installer cors
 // Import des controllers
 const AdminController = require('./controllers/AdminController');
 const CitizenController = require('./controllers/CitizenController');
+const RescueController = require('./controllers/RescueController');
 
 
 
@@ -40,6 +41,11 @@ app.use('/citizen', (req, res, next) => {
     console.log("__CitizenController________________________________");
     next();
 }, CitizenController);
+
+app.use('/rescue', (req, res, next) => {
+    console.log("__RescueController________________________________");
+    next();
+}, RescueController);
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
