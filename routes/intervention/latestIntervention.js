@@ -4,8 +4,9 @@ const { Intervention, Alert, AlertMedia, User, UserPhoto, RescueMember } = requi
 const ApiResponse = require('../../utils/ApiResponse');
 const { authenticate } = require('../../middlewares/authenticate');
 const Logger = require('../../utils/Logger');
+const { Op } = require('sequelize');
 
-router.get('/latest', authenticate(), async (req, res) => {
+router.get('/', authenticate(), async (req, res) => {
     const logData = {
         message: "",
         source: "getLatestIntervention",
@@ -21,7 +22,6 @@ router.get('/latest', authenticate(), async (req, res) => {
     try {
         const { user } = req;
 
-        // Vérifier que l'utilisateur est un membre de secours
         if (user.role !== 'RESCUE_MEMBER') {
             logData.message = "Accès interdit : seuls les membres de secours peuvent effectuer cette action";
             logData.status = "FAILED";
@@ -29,7 +29,6 @@ router.get('/latest', authenticate(), async (req, res) => {
             return ApiResponse.unauthorized(res, logData.message);
         }
 
-        // Récupérer le RescueMember associé à l'utilisateur
         const rescueMember = await RescueMember.findOne({
             where: { user_id: user.id }
         });
@@ -41,9 +40,13 @@ router.get('/latest', authenticate(), async (req, res) => {
             return ApiResponse.badRequest(res, logData.message);
         }
 
-        // Récupérer la dernière intervention
         const latestIntervention = await Intervention.findOne({
-            where: { rescue_member_id: rescueMember.id },
+            where: { 
+                rescue_member_id: rescueMember.id,
+                status: {
+                    [Op.notIn]: ['TERMINEE', 'ANNULEE']
+                }
+            },
             order: [['created_at', 'DESC']],
             include: [
                 {
@@ -73,14 +76,13 @@ router.get('/latest', authenticate(), async (req, res) => {
         });
 
         if (!latestIntervention) {
-            logData.message = "Aucune intervention trouvée";
+            logData.message = "Aucune intervention active trouvée";
             logData.status = "SUCCESS";
             logData.responseData = null;
             await Logger.logEvent(logData);
             return ApiResponse.success(res, logData.message, null);
         }
 
-        // Formatter la réponse
         const formattedResponse = {
             intervention: {
                 id: latestIntervention.id,
@@ -111,7 +113,7 @@ router.get('/latest', authenticate(), async (req, res) => {
             } : null
         };
 
-        logData.message = "Dernière intervention récupérée avec succès";
+        logData.message = "Dernière intervention active récupérée avec succès";
         logData.status = "SUCCESS";
         logData.responseData = formattedResponse;
         await Logger.logEvent(logData);

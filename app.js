@@ -8,6 +8,8 @@ var cors = require('cors');  // N'oubliez pas d'installer cors
 const AdminController = require('./controllers/AdminController');
 const CitizenController = require('./controllers/CitizenController');
 const RescueController = require('./controllers/RescueController');
+const InterventionController = require('./controllers/InterventionController');
+const NotificationController = require('./controllers/NotificationController');
 
 
 
@@ -46,6 +48,16 @@ app.use('/rescue', (req, res, next) => {
     console.log("__RescueController________________________________");
     next();
 }, RescueController);
+
+app.use('/intervention', (req, res, next) => {
+    console.log("__InterventionController________________________________");
+    next();
+}, InterventionController);
+
+app.use('/notifications', (req, res, next) => {
+    console.log("__NotificationController________________________________");
+    next();
+}, NotificationController);
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
