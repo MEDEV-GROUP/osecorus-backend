@@ -1,4 +1,6 @@
-const { Notification, User } = require('../models');
+
+const { Op, literal } = require('sequelize');
+const { Notification, User, sequelize } = require('../models');
 const Logger = require('./Logger');
 
 class NotificationManager {
@@ -117,8 +119,8 @@ class NotificationManager {
                             { type: 'MASS' },
                             {
                                 target: {
-                                    [Op.eq]: sequelize.literal(
-                                        `(SELECT role FROM "Users" WHERE id = '${userId}')`
+                                    [Op.eq]: literal(
+                                        `(SELECT role FROM Users WHERE id = '${userId}')`
                                     )
                                 }
                             }

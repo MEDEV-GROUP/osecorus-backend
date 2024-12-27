@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ApiResponse = require('../../utils/ApiResponse');
 const { authenticate } = require('../../middlewares/authenticate');
+const Logger = require('../../utils/Logger');
 const NotificationManager = require('../../utils/NotificationManager');
 
 router.get('/', authenticate(), async (req, res) => {
