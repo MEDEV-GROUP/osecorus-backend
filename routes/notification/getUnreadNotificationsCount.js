@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ApiResponse = require('../../utils/ApiResponse');
 const { authenticate } = require('../../middlewares/authenticate');
+const Logger = require('../../utils/Logger');
 const { Notification } = require('../../models');
 const { Op } = require('sequelize');
 
