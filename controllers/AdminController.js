@@ -21,6 +21,7 @@ const getAlerts = require('../routes/' + service + '/getAlerts');
 const getAllMessages = require('../routes/' + service + '/getAllMessages');
 const dashboard = require('../routes/' + service + '/dashboard');
 const basicStats = require('../routes/' + service + '/basicStats');
+const alertsByCategory = require('../routes/' + service + '/alertsByCategory');
 
 
 
@@ -42,6 +43,7 @@ router.use('/get-all-message', getAllMessages);
 router.use('/all-alerts', getAlerts);
 router.use('/dashboard', dashboard);
 router.use('/basic-stats', basicStats);
+router.use('/alerts-by-category', alertsByCategory);
 
 
 
