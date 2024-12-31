@@ -14,6 +14,7 @@
     "db:reset:test": "NODE_ENV=test npx sequelize-cli db:migrate:undo:all && NODE_ENV=test npx sequelize-cli db:drop && NODE_ENV=test npx sequelize-cli db:create && NODE_ENV=test npx sequelize-cli db:migrate && NODE_ENV=test npx sequelize-cli db:seed:all"
   },
   "dependencies": {
+    "@onesignal/node-onesignal": "^5.0.0-alpha-02",
     "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "~1.4.4",

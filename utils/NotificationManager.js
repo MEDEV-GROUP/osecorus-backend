@@ -1,13 +1,13 @@
-
 const { Op, literal } = require('sequelize');
-const { Notification, User, sequelize } = require('../models');
+const { Notification, User, ExternalId, sequelize } = require('../models');
 const Logger = require('./Logger');
+const oneSignalClient = require('./OneSignalClient');
 
 class NotificationManager {
     /**
      * Crée une notification unique pour un utilisateur spécifique
      */
-    static async createUniqueNotification(senderId, recipientId, message) {
+    static async createUniqueNotification(senderId, recipientId, message, title = "") {
         const logData = {
             source: "NotificationManager",
             action: "Create Unique Notification",
@@ -21,6 +21,24 @@ class NotificationManager {
                 message,
                 type: 'UNIQUE'
             });
+
+            // Récupérer l'external ID de l'utilisateur
+            const externalId = await ExternalId.findOne({
+                where: { user_id: recipientId }
+            });
+
+            // Si l'utilisateur a un external ID, envoyer la notification via OneSignal
+            if (externalId) {
+                await oneSignalClient.sendNotification({
+                    headings: title || "Nouvelle notification",
+                    contents: message,
+                    externalIds: [externalId.external_id],
+                    data: {
+                        notificationId: notification.id,
+                        type: 'UNIQUE'
+                    }
+                });
+            }
 
             logData.status = "SUCCESS";
             logData.message = "Notification unique créée avec succès";
@@ -39,7 +57,7 @@ class NotificationManager {
     /**
      * Crée une notification de masse pour un type d'utilisateurs (RESCUE ou CITIZEN)
      */
-    static async createMassNotification(senderId, target, message) {
+    static async createMassNotification(senderId, target, message, title = "") {
         const logData = {
             source: "NotificationManager",
             action: "Create Mass Notification",
@@ -53,6 +71,31 @@ class NotificationManager {
                 type: 'MASS',
                 target
             });
+
+            // Récupérer tous les external IDs des utilisateurs du type cible
+            const externalIds = await ExternalId.findAll({
+                include: [{
+                    model: User,
+                    as: 'user',
+                    where: { role: target }
+                }],
+                attributes: ['external_id']
+            });
+
+            // Si des utilisateurs ont des external IDs, envoyer la notification via OneSignal
+            if (externalIds.length > 0) {
+                const externalIdList = externalIds.map(e => e.external_id);
+                await oneSignalClient.sendNotification({
+                    headings: title || "Nouvelle notification",
+                    contents: message,
+                    externalIds: externalIdList,
+                    data: {
+                        notificationId: notification.id,
+                        type: 'MASS',
+                        target
+                    }
+                });
+            }
 
             logData.status = "SUCCESS";
             logData.message = "Notification de masse créée avec succès";

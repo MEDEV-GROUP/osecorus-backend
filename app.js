@@ -1,8 +1,10 @@
 var express = require('express');
+require('dotenv').config();
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');  // N'oubliez pas d'installer cors
+const oneSignalClient = require('./utils/OneSignalClient');
 
 // Import des controllers
 const AdminController = require('./controllers/AdminController');
@@ -58,6 +60,20 @@ app.use('/notifications', (req, res, next) => {
     console.log("__NotificationController________________________________");
     next();
 }, NotificationController);
+
+// Test de la configuration
+(async () => {
+    try {
+        const testResult = await oneSignalClient.sendNotification({
+            headings: "Test",
+            contents: "Test message",
+            externalIds: ["e06aa373-b8ca-45f6-b986-f0ce1d3742f3"]
+        });
+        console.log('Test OneSignal:', testResult);
+    } catch (error) {
+        console.error('Erreur test OneSignal:', error);
+    }
+})();
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
