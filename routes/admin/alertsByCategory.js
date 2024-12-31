@@ -48,9 +48,11 @@ router.get('/', authenticate(), async (req, res) => {
                     [Op.between]: [startDate, endDate]
                 }
             },
-            group: ['category', 
-                   sequelize.fn('MONTH', sequelize.col('created_at')),
-                   sequelize.fn('YEAR', sequelize.col('created_at'))],
+            group: [
+                'category',
+                sequelize.fn('MONTH', sequelize.col('created_at')),
+                sequelize.fn('YEAR', sequelize.col('created_at'))
+            ],
             order: [
                 [sequelize.fn('MONTH', sequelize.col('created_at')), 'ASC']
             ],
@@ -60,11 +62,11 @@ router.get('/', authenticate(), async (req, res) => {
         // Formater les données pour obtenir un tableau par mois
         const months = {};
         const categories = ['Accidents', 'Incendies', 'Inondations', 'Malaises', 'Noyade', 'Autre'];
-        
+
         alertsByCategory.forEach(alert => {
             const monthNum = alert.month.toString().padStart(2, '0');
             const monthKey = `${alert.year}-${monthNum}`;
-            
+
             if (!months[monthKey]) {
                 months[monthKey] = {
                     month: monthKey,
@@ -94,17 +96,34 @@ router.get('/', authenticate(), async (req, res) => {
             }
         }
 
+        // Calcul des totaux par catégorie et du total général
+        const totalsByCategory = categories.reduce((acc, category) => {
+            acc[category] = Object.values(months).reduce((sum, month) => sum + (month[category] || 0), 0);
+            return acc;
+        }, {});
+
+        const grandTotal = Object.values(months).reduce((sum, month) => sum + month.total, 0);
+
+        // Calcul du "taux" (ou pourcentage) de chaque catégorie par rapport au grand total
+        const averageByCategory = categories.reduce((acc, category) => {
+            const categoryTotal = totalsByCategory[category];
+            // Pour éviter les divisions par zéro
+            if (grandTotal === 0) {
+                acc[category] = 0;
+            } else {
+                // Exemple : pourcentage arrondi à 2 décimales
+                acc[category] = ((categoryTotal / grandTotal) * 100).toFixed(2);
+            }
+            return acc;
+        }, {});
+
         const response = {
             year: currentYear,
             monthlyData: Object.values(months).sort((a, b) => a.month.localeCompare(b.month)),
             categories: categories,
-            // Ajouter les totaux par catégorie
-            totalsByCategory: categories.reduce((acc, category) => {
-                acc[category] = Object.values(months).reduce((sum, month) => sum + (month[category] || 0), 0);
-                return acc;
-            }, {}),
-            // Total général
-            grandTotal: Object.values(months).reduce((sum, month) => sum + month.total, 0)
+            totalsByCategory: totalsByCategory,
+            grandTotal: grandTotal,
+            averageByCategory: averageByCategory
         };
 
         logData.message = "Statistiques des alertes par catégorie récupérées avec succès";

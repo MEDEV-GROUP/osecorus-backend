@@ -9,6 +9,7 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.Alert, { foreignKey: 'reporter_id', as: 'alerts' });
       this.hasOne(models.RescueMember, { foreignKey: 'user_id', as: 'rescueMember' });
       this.hasOne(models.AdminRight, { foreignKey: 'user_id', as: 'adminRight' });
+      this.hasMany(models.Token, { foreignKey: 'user_id', as: 'tokens' });
     }
   }
 
