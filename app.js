@@ -61,20 +61,6 @@ app.use('/notifications', (req, res, next) => {
     next();
 }, NotificationController);
 
-// Test de la configuration
-(async () => {
-    try {
-        const testResult = await oneSignalClient.sendNotification({
-            headings: "Test",
-            contents: "Test message",
-            externalIds: ["e06aa373-b8ca-45f6-b986-f0ce1d3742f3"]
-        });
-        console.log('Test OneSignal:', testResult);
-    } catch (error) {
-        console.error('Erreur test OneSignal:', error);
-    }
-})();
-
 // Gestion des erreurs
 app.use((err, req, res, next) => {
     console.error(`${new Date().toISOString()} - Error:`, err);
