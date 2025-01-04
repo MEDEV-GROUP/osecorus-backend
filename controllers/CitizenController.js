@@ -6,6 +6,7 @@ const service = 'citizen';
 // Routes spécifiques
 const createAlert = require('../routes/' + service + '/createAlert');
 const getLatestAlert = require('../routes/' + service + '/getLatestAlert');
+const getAllCitizenAlerts = require('../routes/' + service + '/getAllCitizenAlerts');
 const registerCitizen = require('../routes/' + service + '/registerCitizen');
 const otpRequest = require('../routes/' + service + '/otpRequest');
 const verifyOtp = require('../routes/' + service + '/verifyOtp');
@@ -22,6 +23,7 @@ const reverse = require('../routes/' + service + '/reverse');
 // Utilisation des routes
 router.use('/create-alert', createAlert);
 router.use('/latest-alert', getLatestAlert);
+router.use('/all-alerts', getAllCitizenAlerts);
 router.use('/register', registerCitizen);
 router.use('/otp-request', otpRequest);
 router.use('/verify-otp', verifyOtp);

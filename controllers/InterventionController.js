@@ -8,6 +8,8 @@ const createIntervention = require('../routes/' + service + '/createIntervention
 const updateInterventionStatus = require('../routes/' + service + '/updateInterventionStatus');
 const latestIntervention = require('../routes/' + service + '/latestIntervention');
 const getAllInterventions = require('../routes/' + service + '/getAllInterventions');
+const getInterventionsHistory = require('../routes/' + service + '/getInterventionsHistory');
+
 
 
 
@@ -16,6 +18,7 @@ router.use('/create', createIntervention);
 router.use('/', updateInterventionStatus);  // Cela permettra d'accéder à /:id/status
 router.use('/latest-intervention', latestIntervention);
 router.use('/get-all-interventions', getAllInterventions);
+router.use('/history', getInterventionsHistory);
 
 
 

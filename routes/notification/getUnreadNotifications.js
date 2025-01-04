@@ -21,7 +21,13 @@ router.get('/', authenticate(), async (req, res) => {
            unreadOnly: true
        });
 
-       logData.message = "Notifications non lues récupérées avec succès";
+       // Marquer toutes les notifications récupérées comme lues
+       const markAsReadPromises = notifications.map(notification => 
+           NotificationManager.markAsRead(notification.id)
+       );
+       await Promise.all(markAsReadPromises);
+
+       logData.message = "Notifications récupérées et marquées comme lues avec succès";
        logData.status = "SUCCESS";
        logData.responseData = notifications;
        await Logger.logEvent(logData);
