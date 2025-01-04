@@ -4,6 +4,13 @@ const { CitizenOtp, User } = require('../../models');
 const { verifyRequestData } = require('../../config/utils'); // Utilitaire pour valider les champs soumis
 const ApiResponse = require('../../utils/ApiResponse'); // Réponses standardisées
 const Logger = require('../../utils/Logger'); // Utilitaire pour les logs
+const twilio = require('twilio');
+
+// Configuration Twilio
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+const client = twilio(accountSid, authToken);
 
 // Fonction utilitaire pour générer un OTP aléatoire
 const generateOtp = () => Math.floor(10000 + Math.random() * 90000).toString(); // OTP à 5 chiffres
@@ -60,7 +67,7 @@ router.post('/', async (req, res) => {
 
       otpRecord = await CitizenOtp.create({
         phone_number: phoneNumber,
-        otp: generateOtp(), // Code OTP fixe
+        otp: generateOtp(),
         expires_at: new Date(Date.now() + 5 * 60 * 1000)
       });
 
@@ -90,15 +97,31 @@ router.post('/', async (req, res) => {
       return ApiResponse.badRequest(res, logData.message);
     }
 
-    logData.status = "SUCCESS";
-    logData.responseData = {
-      phoneNumber: otpRecord.phone_number,
-      expiresAt: otpRecord.expires_at
-    };
-    logData.message += ".";
-    await Logger.logEvent(logData);
+    // Envoi du SMS via Twilio
+    try {
+      await client.messages.create({
+        body: `Votre code OTP est : ${otpRecord.otp}. Il est valable pendant 5 minutes.`,
+        from: twilioPhoneNumber,
+        to: "+225" + phoneNumber
+      });
 
-    return ApiResponse.success(res, logData.message, logData.responseData);
+      logData.status = "SUCCESS";
+      logData.responseData = {
+        phoneNumber: otpRecord.phone_number,
+        expiresAt: otpRecord.expires_at
+      };
+      logData.message += " et SMS envoyé avec succès.";
+      await Logger.logEvent(logData);
+
+      return ApiResponse.success(res, logData.message, logData.responseData);
+    } catch (smsError) {
+      logData.status = "FAILED";
+      logData.responseData = { error: smsError.message };
+      logData.message = "Erreur lors de l'envoi du SMS.";
+      await Logger.logEvent(logData);
+
+      return ApiResponse.serverError(res, logData.message, smsError.message);
+    }
   } catch (error) {
     logData.status = "FAILED";
     logData.responseData = { error: error.message };
