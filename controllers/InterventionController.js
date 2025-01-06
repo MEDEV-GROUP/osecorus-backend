@@ -9,6 +9,7 @@ const updateInterventionStatus = require('../routes/' + service + '/updateInterv
 const latestIntervention = require('../routes/' + service + '/latestIntervention');
 const getAllInterventions = require('../routes/' + service + '/getAllInterventions');
 const getInterventionsHistory = require('../routes/' + service + '/getInterventionsHistory');
+const getInterventionById = require('../routes/' + service + '/getInterventionById');
 
 
 
@@ -19,6 +20,7 @@ router.use('/', updateInterventionStatus);  // Cela permettra d'accéder à /:id
 router.use('/latest-intervention', latestIntervention);
 router.use('/get-all-interventions', getAllInterventions);
 router.use('/history', getInterventionsHistory);
+router.use('/get-intervention', getInterventionById);
 
 
 
