@@ -59,8 +59,8 @@ router.get('/', authenticate(), async (req, res) => {
             description: alert.description,
             category: alert.category,
             address: alert.address,
-            createdAt: alert.created_at,
-            updatedAt: alert.updated_at,
+            createdAt: alert.createdAt,  // Utilisation directe de createdAt de Sequelize
+            updatedAt: alert.updatedAt,  // Utilisation directe de updatedAt de Sequelize
             media: alert.media.map(media => ({
                 id: media.id,
                 media_type: media.media_type,
