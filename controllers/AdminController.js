@@ -24,6 +24,7 @@ const basicStats = require('../routes/' + service + '/basicStats');
 const alertsByCategory = require('../routes/' + service + '/alertsByCategory');
 const alertsByCommune = require('../routes/' + service + '/alertsByCommune');
 const activeUsers = require('../routes/' + service + '/activeUsers');
+const sendNotification = require('../routes/admin/sendNotification');
 
 
 
@@ -48,6 +49,7 @@ router.use('/basic-stats', basicStats);
 router.use('/alerts-by-category', alertsByCategory);
 router.use('/alerts-by-commune', alertsByCommune);
 router.use('/active-users', activeUsers);
+router.use('/send-notification', sendNotification);
 
 
 

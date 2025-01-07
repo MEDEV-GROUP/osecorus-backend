@@ -7,6 +7,40 @@ const { authenticate } = require('../../middlewares/authenticate');
 const Logger = require('../../utils/Logger');
 const NotificationManager = require('../../utils/NotificationManager');
 
+// Matrice des transitions autorisées
+const transitionMatrix = {
+    'EN_ROUTE': {
+        'SUR_PLACE': true,
+        'ANNULEE': true,
+        'TERMINEE': false
+    },
+    'SUR_PLACE': {
+        'TERMINEE': true,
+        'ANNULEE': true,
+        'EN_ROUTE': false
+    },
+    'TERMINEE': {
+        'EN_ROUTE': false,
+        'SUR_PLACE': false,
+        'ANNULEE': false
+    },
+    'ANNULEE': {
+        'EN_ROUTE': false,
+        'SUR_PLACE': false,
+        'TERMINEE': false
+    }
+};
+
+function validateStatusTransition(currentStatus, newStatus) {
+    return transitionMatrix[currentStatus]?.[newStatus] || false;
+}
+
+function getValidTransitions(currentStatus) {
+    return Object.entries(transitionMatrix[currentStatus] || {})
+        .filter(([_, isValid]) => isValid)
+        .map(([status]) => status);
+}
+
 router.patch('/:id/status', authenticate(), async (req, res) => {
     const logData = {
         message: "",
@@ -61,7 +95,39 @@ router.patch('/:id/status', authenticate(), async (req, res) => {
             ]
         });
 
-        // ... [Vérifications et validations existantes restent les mêmes]
+        if (!intervention) {
+            logData.message = "Intervention introuvable";
+            logData.status = "FAILED";
+            await Logger.logEvent(logData);
+            return ApiResponse.badRequest(res, logData.message);
+        }
+
+        // Vérifier les permissions
+        if (user.role === 'RESCUE_MEMBER') {
+            const rescueMember = await RescueMember.findOne({ where: { user_id: user.id } });
+            if (!rescueMember || rescueMember.id !== intervention.rescue_member_id) {
+                logData.message = "Vous n'êtes pas autorisé à modifier cette intervention";
+                logData.status = "FAILED";
+                await Logger.logEvent(logData);
+                return ApiResponse.unauthorized(res, logData.message);
+            }
+        } else if (user.role !== 'ADMIN') {
+            logData.message = "Accès non autorisé";
+            logData.status = "FAILED";
+            await Logger.logEvent(logData);
+            return ApiResponse.unauthorized(res, logData.message);
+        }
+
+        // Vérifier la validité de la transition de statut
+        const isValidTransition = validateStatusTransition(intervention.status, status);
+        if (!isValidTransition) {
+            const validTransitions = getValidTransitions(intervention.status);
+            const errorMessage = `Transition de statut invalide : impossible de passer de ${intervention.status} à ${status}. Les transitions autorisées depuis ${intervention.status} sont : ${validTransitions.join(', ') || 'aucune'}`;
+            logData.message = errorMessage;
+            logData.status = "FAILED";
+            await Logger.logEvent(logData);
+            return ApiResponse.badRequest(res, errorMessage);
+        }
 
         // Mettre à jour les champs selon le nouveau statut
         const updateData = {
@@ -79,29 +145,33 @@ router.patch('/:id/status', authenticate(), async (req, res) => {
         // Mise à jour de l'intervention
         await intervention.update(updateData);
 
-        // Notifications selon le status avec titres appropriés
-        if (status === 'SUR_PLACE') {
-            await NotificationManager.createUniqueNotification(
-                user.id,
-                intervention.alert.reporter_id,
-                `L'équipe de secours est arrivée sur place pour votre alerte.`,
-                "Équipe sur place" // Titre de la notification
-            );
-        } else if (status === 'TERMINEE') {
-            await intervention.alert.update({ status: 'RESOLUE' });
-            await NotificationManager.createUniqueNotification(
-                user.id,
-                intervention.alert.reporter_id,
-                `L'intervention concernant votre alerte est terminée.`,
-                "Intervention terminée" // Titre de la notification
-            );
-        } else if (status === 'ANNULEE') {
-            await NotificationManager.createUniqueNotification(
-                user.id,
-                intervention.alert.reporter_id,
-                `L'intervention concernant votre alerte a été annulée.`,
-                "Intervention annulée" // Titre de la notification
-            );
+        // Notifications selon le statut
+        try {
+            if (status === 'SUR_PLACE') {
+                await NotificationManager.createUniqueNotification(
+                    user.id,
+                    intervention.alert.reporter_id,
+                    `L'équipe de secours est arrivée sur place pour votre alerte.`,
+                    "Équipe sur place"
+                );
+            } else if (status === 'TERMINEE') {
+                await intervention.alert.update({ status: 'RESOLUE' });
+                await NotificationManager.createUniqueNotification(
+                    user.id,
+                    intervention.alert.reporter_id,
+                    `L'intervention concernant votre alerte est terminée.`,
+                    "Intervention terminée"
+                );
+            } else if (status === 'ANNULEE') {
+                await NotificationManager.createUniqueNotification(
+                    user.id,
+                    intervention.alert.reporter_id,
+                    `L'intervention concernant votre alerte a été annulée.`,
+                    "Intervention annulée"
+                );
+            }
+        } catch (notifError) {
+            console.error('Erreur lors de l\'envoi des notifications:', notifError);
         }
 
         // Récupérer l'intervention mise à jour avec ses relations
@@ -136,16 +206,5 @@ router.patch('/:id/status', authenticate(), async (req, res) => {
         return ApiResponse.serverError(res, logData.message, error.message);
     }
 });
-
-function validateStatusTransition(currentStatus, newStatus) {
-    const validTransitions = {
-        'EN_ROUTE': ['SUR_PLACE', 'ANNULEE'],
-        'SUR_PLACE': ['TERMINEE', 'ANNULEE'],
-        'TERMINEE': [], // Pas de transition possible depuis TERMINEE
-        'ANNULEE': []  // Pas de transition possible depuis ANNULEE
-    };
-
-    return validTransitions[currentStatus]?.includes(newStatus) || false;
-}
 
 module.exports = router;
