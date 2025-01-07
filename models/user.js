@@ -10,6 +10,8 @@ module.exports = (sequelize, DataTypes) => {
       this.hasOne(models.RescueMember, { foreignKey: 'user_id', as: 'rescueMember' });
       this.hasOne(models.AdminRight, { foreignKey: 'user_id', as: 'adminRight' });
       this.hasMany(models.Token, { foreignKey: 'user_id', as: 'tokens' });
+      this.hasMany(models.ExternalId, { foreignKey: 'user_id', as: 'externalIds'});
+
     }
   }
 
