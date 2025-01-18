@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const ApiResponse = require('../../utils/ApiResponse'); // Réponses standardisées
-const { authenticate } = require('../../middlewares/authenticate'); // Middleware d'authentification
-const Logger = require('../../utils/Logger'); // Utilitaire pour les logs
+const ApiResponse = require('../../utils/ApiResponse');
+const { authenticate } = require('../../middlewares/authenticate');
+const Logger = require('../../utils/Logger');
 const { Alert, AlertMedia } = require('../../models');
+const { Op } = require('sequelize'); // Ajout de Op pour les opérateurs
 
 router.get('/', authenticate(), async (req, res) => {
     const logData = {
@@ -31,7 +32,12 @@ router.get('/', authenticate(), async (req, res) => {
         const userId = user.id;
 
         const latestAlert = await Alert.findOne({
-            where: { reporter_id: userId },
+            where: {
+                reporter_id: userId,
+                status: {
+                    [Op.notIn]: ['RESOLUE', 'ANNULEE'] // Ajout de la condition pour exclure les alertes résolues et annulées
+                }
+            },
             include: [{
                 model: AlertMedia,
                 as: 'media',
@@ -41,26 +47,20 @@ router.get('/', authenticate(), async (req, res) => {
         });
 
         if (!latestAlert) {
-            logData.message = "Aucune alerte trouvée pour cet utilisateur";
+            logData.message = "Aucune alerte active trouvée pour cet utilisateur";
             logData.status = "SUCCESS";
             logData.responseData = null;
             await Logger.logEvent(logData);
 
-            return res.status(200).json({
-                message: logData.message,
-                data: null
-            });
+            return ApiResponse.success(res, logData.message, null);
         }
 
-        logData.message = "Dernière alerte récupérée avec succès";
+        logData.message = "Dernière alerte active récupérée avec succès";
         logData.status = "SUCCESS";
         logData.responseData = latestAlert;
         await Logger.logEvent(logData);
 
-        res.status(200).json({
-            message: logData.message,
-            data: latestAlert
-        });
+        return ApiResponse.success(res, logData.message, latestAlert);
 
     } catch (error) {
         logData.message = "Erreur lors de la récupération de la dernière alerte";
@@ -68,10 +68,7 @@ router.get('/', authenticate(), async (req, res) => {
         logData.responseData = { error: error.message };
         await Logger.logEvent(logData);
 
-        res.status(500).json({
-            message: logData.message,
-            data: error.message
-        });
+        return ApiResponse.serverError(res, logData.message, error.message);
     }
 });
 
