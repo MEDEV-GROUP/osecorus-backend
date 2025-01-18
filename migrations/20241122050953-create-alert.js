@@ -36,7 +36,7 @@ module.exports = {
         }
       },
       status: {
-        type: Sequelize.ENUM('EN_ATTENTE', 'ACCEPTEE', 'EN_COURS', 'RESOLUE'), // Mise à jour des valeurs ENUM en français
+        type: Sequelize.ENUM('EN_ATTENTE', 'ACCEPTEE', 'EN_COURS', 'RESOLUE'),
         allowNull: false,
         defaultValue: 'EN_ATTENTE'
       },

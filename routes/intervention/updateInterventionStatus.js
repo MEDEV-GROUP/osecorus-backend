@@ -148,6 +148,7 @@ router.patch('/:id/status', authenticate(), async (req, res) => {
         // Notifications selon le statut
         try {
             if (status === 'SUR_PLACE') {
+                await intervention.alert.update({ status: 'EN_COURS' });
                 await NotificationManager.createUniqueNotification(
                     user.id,
                     intervention.alert.reporter_id,
@@ -163,6 +164,7 @@ router.patch('/:id/status', authenticate(), async (req, res) => {
                     "Intervention terminée"
                 );
             } else if (status === 'ANNULEE') {
+                await intervention.alert.update({ status: 'ANNULEE' });
                 await NotificationManager.createUniqueNotification(
                     user.id,
                     intervention.alert.reporter_id,

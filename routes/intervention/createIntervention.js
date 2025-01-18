@@ -126,7 +126,7 @@ router.post('/', authenticate(), async (req, res) => {
         });
 
         // Mettre à jour le statut de l'alerte
-        await alert.update({ status: 'EN_COURS' });
+        await alert.update({ status: 'ACCEPTEE' });
 
         // Créer une notification pour le membre de secours
         await NotificationManager.createUniqueNotification(
