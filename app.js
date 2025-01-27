@@ -21,6 +21,15 @@ var app = express();
 // Configuration de base de Helmet pour API
 app.use(helmet());
 
+// Configuration spécifique pour Permissions-Policy
+app.use((req, res, next) => {
+    res.setHeader(
+        'Permissions-Policy',
+        'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()'
+    );
+    next();
+});
+
 // Configuration CORS
 app.use(cors({
     origin: '*',
