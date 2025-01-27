@@ -57,25 +57,10 @@ module.exports = {
         defaultValue: Sequelize.fn('NOW')
       }
     });
-
-    // Puis création des index séparément
-    await queryInterface.addIndex('Notifications', ['sender_id'], {
-      name: 'notifications_sender_id'
-    });
-
-    await queryInterface.addIndex('Notifications', ['recipient_id'], {
-      name: 'notifications_recipient_id'
-    });
-
-    await queryInterface.addIndex('Notifications', ['type'], {
-      name: 'notifications_type'
-    });
   },
 
   async down(queryInterface, Sequelize) {
     // Suppression du type ENUM
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Notifications_type";');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Notifications_target";');
     
     // Suppression de la table
     await queryInterface.dropTable('Notifications');

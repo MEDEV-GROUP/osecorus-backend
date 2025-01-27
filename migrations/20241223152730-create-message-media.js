@@ -45,7 +45,6 @@ module.exports = {
 
  async down(queryInterface, Sequelize) {
    // Suppression du type ENUM
-   await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_MessageMedia_media_type";');
    
    // Suppression de la table
    await queryInterface.dropTable('MessageMedia');

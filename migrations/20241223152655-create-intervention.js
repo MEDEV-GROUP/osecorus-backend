@@ -77,13 +77,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Suppression des index
-    await queryInterface.removeIndex('Interventions', 'interventions_alert_id');
-    await queryInterface.removeIndex('Interventions', 'interventions_rescue_member_id');
-    await queryInterface.removeIndex('Interventions', 'interventions_status');
-    
-    // Suppression du type ENUM
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Interventions_status";');
 
     // Suppression de la table
     await queryInterface.dropTable('Interventions');
