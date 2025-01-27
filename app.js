@@ -4,6 +4,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');  // N'oubliez pas d'installer cors
+const helmet = require('helmet');
 const oneSignalClient = require('./utils/OneSignalClient');
 
 // Import des controllers
