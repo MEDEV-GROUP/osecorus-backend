@@ -17,6 +17,9 @@ const NotificationController = require('./controllers/NotificationController');
 
 var app = express();
 
+// Configuration de base de Helmet pour API
+app.use(helmet());
+
 // Configuration CORS
 app.use(cors({
     origin: '*',
