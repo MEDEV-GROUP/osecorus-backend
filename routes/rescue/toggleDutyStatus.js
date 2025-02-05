@@ -17,6 +17,7 @@ router.patch('/toggle-duty', authenticate(), async (req, res) => {
         status: "PENDING",
         deviceInfo: req.headers['user-agent'] || 'Unknown Device'
     };
+    
 
     try {
         const { user } = req;
