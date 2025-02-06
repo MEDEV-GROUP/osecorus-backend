@@ -17,6 +17,7 @@ const deleteSafeNumbers = require('../routes/' + service + '/deleteSafeNumbers')
 const getSafeNumbers = require('../routes/' + service + '/getSafeNumbers');
 const safeBroadcast = require('../routes/' + service + '/safeBroadcast');
 const reverse = require('../routes/' + service + '/reverse');
+const getAlertDetails = require('../routes/' + service + '/getAlertDetails');
 
 
 
@@ -25,6 +26,7 @@ const reverse = require('../routes/' + service + '/reverse');
 router.use('/create-alert', createAlert);
 router.use('/latest-alert', getLatestAlert);
 router.use('/all-alerts', getAllCitizenAlerts);
+router.use('/get-alert-details', getAlertDetails);
 router.use('/register', registerCitizen);
 router.use('/otp-request', otpRequest);
 router.use('/verify-otp', verifyOtp);
