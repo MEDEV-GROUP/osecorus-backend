@@ -14,6 +14,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'reporter_id',
         as: 'reporter'
       });
+      // Ajouter cette nouvelle association
+      this.hasMany(models.Intervention, {
+        foreignKey: 'alert_id',
+        as: 'interventions'
+      });
     }
   }
 
