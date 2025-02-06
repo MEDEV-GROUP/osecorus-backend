@@ -21,8 +21,8 @@ var app = express();
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1500, // Limite chaque IP à 100 requêtes par fenêtre (ici 15 minutes)
-    max: 2000, // Limite chaque IP à 100 requêtes par fenêtre (ici 15 minutes)
+    max: 1500000, // Limite chaque IP à 100 requêtes par fenêtre (ici 15 minutes)
+    max: 2000000, // Limite chaque IP à 100 requêtes par fenêtre (ici 15 minutes)
     standardHeaders: true, // Retourne les infos de rate limit dans les headers `RateLimit-*`
     legacyHeaders: false, // Désactive les headers `X-RateLimit-*`
     message: {
