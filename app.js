@@ -20,16 +20,7 @@ const NotificationController = require('./controllers/NotificationController');
 var app = express();
 
 // Configuration du rate limiter
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 2000, // Limite chaque IP à 100 requêtes par fenêtre (ici 15 minutes)
-    standardHeaders: true, // Retourne les infos de rate limit dans les headers `RateLimit-*`
-    legacyHeaders: false, // Désactive les headers `X-RateLimit-*`
-    message: {
-        status: 429,
-        message: 'Trop de requêtes, veuillez réessayer plus tard.'
-    }
-});
+
 
 // Configuration de base de Helmet pour API
 app.use(helmet());
