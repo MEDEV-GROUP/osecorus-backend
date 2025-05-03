@@ -18,6 +18,8 @@ const getSafeNumbers = require('../routes/' + service + '/getSafeNumbers');
 const safeBroadcast = require('../routes/' + service + '/safeBroadcast');
 const reverse = require('../routes/' + service + '/reverse');
 const getAlertDetails = require('../routes/' + service + '/getAlertDetails');
+const loginWithPhone = require('../routes/' + service + '/loginWithPhone'); // Nouvelle route
+
 
 
 
@@ -36,6 +38,8 @@ router.use('/safe-numbers', createSafeNumbers);
 router.use('/safe-numbers', deleteSafeNumbers);
 router.use('/safe-numbers', getSafeNumbers);
 router.use('/safe', safeBroadcast);
+router.use('/login', loginWithPhone); // Ajout de la route de connexion
+
 
 router.use('/reverse-geocode', reverse);
 
