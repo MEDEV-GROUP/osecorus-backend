@@ -257,15 +257,7 @@ router.get('/:id', authenticate(), async (req, res) => {
                     description: intervention.rescueMember.service.description
                 }
             },
-            timeline: timeline,
-            actionHistory: actionLogs.map(log => ({
-                action: log.action,
-                timestamp: log.created_at,
-                message: log.message,
-                status: log.status,
-                userId: log.user_id,
-                responseData: log.response_data
-            }))
+            timeline: timeline
         };
 
         logData.message = "Détails de l'intervention récupérés avec succès";
