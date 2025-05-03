@@ -115,6 +115,31 @@ router.get('/:id', authenticate(), async (req, res) => {
             return ApiResponse.notFound(res, logData.message);
         }
 
+        // Récupérer l'historique des actions à partir des logs
+        const actionLogs = await Log.findAll({
+            where: {
+                [Op.or]: [
+                    {
+                        action: {
+                            [Op.like]: '%Intervention%'
+                        },
+                        request_data: {
+                            interventionId: id
+                        }
+                    },
+                    {
+                        action: {
+                            [Op.like]: '%Intervention%'
+                        },
+                        request_data: {
+                            id: id
+                        }
+                    }
+                ]
+            },
+            order: [['created_at', 'ASC']]
+        });
+
         // Calculer des métriques d'intervention
         const interMetrics = {
             totalDuration: intervention.end_time ?
@@ -232,7 +257,16 @@ router.get('/:id', authenticate(), async (req, res) => {
                     description: intervention.rescueMember.service.description
                 }
             },
-            timeline: timeline
+            timeline: timeline,
+            actionHistory: actionLogs.map(log => ({
+                action: log.action,
+                timestamp: log.created_at,
+                message: log.message,
+                status: log.status,
+                userId: log.user_id,
+                requestData: log.request_data,
+                responseData: log.response_data
+            }))
         };
 
         logData.message = "Détails de l'intervention récupérés avec succès";
