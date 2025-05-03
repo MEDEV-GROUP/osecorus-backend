@@ -11,6 +11,8 @@ const getAllInterventions = require('../routes/' + service + '/getAllInterventio
 const getInterventionsHistory = require('../routes/' + service + '/getInterventionsHistory');
 const getInterventionById = require('../routes/' + service + '/getInterventionById');
 const getInterventions = require('../routes/' + service + '/getInterventions'); // Nouvelle route ajoutée
+const getInterventionDetails = require('../routes/' + service + '/getInterventionDetails'); // Nouvelle route ajoutée
+
 
 
 
@@ -24,6 +26,8 @@ router.use('/get-all-interventions', getAllInterventions);
 router.use('/history', getInterventionsHistory);
 router.use('/get-intervention', getInterventionById);
 router.use('/list', getInterventions); // Ajout de la nouvelle route
+router.use('/details', getInterventionDetails); // Ajout de la nouvelle route détaillée
+
 
 
 
