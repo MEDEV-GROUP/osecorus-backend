@@ -264,6 +264,7 @@ router.get('/:id', authenticate(), async (req, res) => {
                 message: log.message,
                 status: log.status,
                 userId: log.user_id,
+                responseData: log.response_data
             }))
         };
 
