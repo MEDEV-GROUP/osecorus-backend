@@ -14,6 +14,8 @@ const CitizenController = require('./controllers/CitizenController');
 const RescueController = require('./controllers/RescueController');
 const InterventionController = require('./controllers/InterventionController');
 const NotificationController = require('./controllers/NotificationController');
+const EtablissementSanteController = require('./controllers/EtablissementSanteController');
+
 
 
 
@@ -91,6 +93,11 @@ app.use('/notifications', (req, res, next) => {
     console.log("__NotificationController________________________________");
     next();
 }, NotificationController);
+
+app.use('/etablissement-sante', (req, res, next) => {
+    console.log("__EtablissementSanteController________________________________");
+    next();
+}, EtablissementSanteController);
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
