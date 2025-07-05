@@ -106,49 +106,60 @@ router.post('/', authenticate(), async (req, res) => {
         // Filtrer les pharmacies dans le rayon spécifié
         const nearbyPharmacies = pharmaciesWithCoords.filter(p => p.distance <= radius);
 
-        // Grouper les pharmacies par commune
-        const pharmaciesByCommune = {};
+        // Trier toutes les pharmacies avec coordonnées par distance (les plus proches en premier)
+        nearbyPharmacies.sort((a, b) => a.distance - b.distance);
 
-        nearbyPharmacies.forEach(pharmacy => {
-            if (!pharmaciesByCommune[pharmacy.commune]) {
-                pharmaciesByCommune[pharmacy.commune] = [];
+        // Obtenir les communes des pharmacies trouvées
+        const foundCommunes = [...new Set(nearbyPharmacies.map(p => p.commune))];
+
+        // Ajouter les pharmacies sans coordonnées des mêmes communes à la fin
+        const pharmaciesWithoutCoordsFromSameCommunes = pharmaciesWithoutCoords
+            .filter(p => foundCommunes.includes(p.commune))
+            .sort((a, b) => a.name.localeCompare(b.name)); // Tri alphabétique pour celles sans coordonnées
+
+        // Si moins de 5 communes trouvées, ajouter des pharmacies sans coordonnées d'autres communes
+        let additionalPharmaciesWithoutCoords = [];
+        if (foundCommunes.length < 5) {
+            const otherCommunes = [...new Set(pharmaciesWithoutCoords
+                .filter(p => !foundCommunes.includes(p.commune))
+                .map(p => p.commune))]
+                .slice(0, 5 - foundCommunes.length);
+
+            additionalPharmaciesWithoutCoords = pharmaciesWithoutCoords
+                .filter(p => otherCommunes.includes(p.commune))
+                .sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        // Combiner les résultats : pharmacies avec coordonnées (par distance) + pharmacies sans coordonnées (par nom)
+        const result = [
+            ...nearbyPharmacies,
+            ...pharmaciesWithoutCoordsFromSameCommunes,
+            ...additionalPharmaciesWithoutCoords
+        ];
+
+        // Obtenir les statistiques par commune pour la réponse
+        const communeStats = {};
+        result.forEach(pharmacy => {
+            if (!communeStats[pharmacy.commune]) {
+                communeStats[pharmacy.commune] = {
+                    name: pharmacy.commune,
+                    count: 0,
+                    withCoordinates: 0,
+                    withoutCoordinates: 0,
+                    closestDistance: null
+                };
             }
-            pharmaciesByCommune[pharmacy.commune].push(pharmacy);
-        });
+            communeStats[pharmacy.commune].count++;
 
-        pharmaciesWithoutCoords.forEach(pharmacy => {
-            if (!pharmaciesByCommune[pharmacy.commune]) {
-                pharmaciesByCommune[pharmacy.commune] = [];
+            if (pharmacy.distance !== null) {
+                communeStats[pharmacy.commune].withCoordinates++;
+                if (communeStats[pharmacy.commune].closestDistance === null ||
+                    pharmacy.distance < communeStats[pharmacy.commune].closestDistance) {
+                    communeStats[pharmacy.commune].closestDistance = pharmacy.distance;
+                }
+            } else {
+                communeStats[pharmacy.commune].withoutCoordinates++;
             }
-            pharmaciesByCommune[pharmacy.commune].push(pharmacy);
-        });
-
-        // Calculer la distance moyenne de chaque commune et trier
-        const communesWithDistance = Object.keys(pharmaciesByCommune).map(commune => ({
-            commune,
-            averageDistance: calculateCommuneDistance(userLat, userLng, pharmaciesByCommune[commune]),
-            pharmacies: pharmaciesByCommune[commune]
-        }));
-
-        // Trier les communes par distance moyenne
-        communesWithDistance.sort((a, b) => a.averageDistance - b.averageDistance);
-
-        // Prendre les 5 communes les plus proches
-        const closestCommunes = communesWithDistance.slice(0, 5);
-
-        // Construire la réponse finale
-        const result = [];
-
-        closestCommunes.forEach(communeData => {
-            // Trier les pharmacies de chaque commune : avec coordonnées en premier (par distance), puis sans coordonnées
-            const pharmaciesWithCoordsInCommune = communeData.pharmacies
-                .filter(p => p.distance !== null)
-                .sort((a, b) => a.distance - b.distance);
-
-            const pharmaciesWithoutCoordsInCommune = communeData.pharmacies
-                .filter(p => p.distance === null);
-
-            result.push(...pharmaciesWithCoordsInCommune, ...pharmaciesWithoutCoordsInCommune);
         });
 
         const response = {
@@ -157,13 +168,15 @@ router.post('/', authenticate(), async (req, res) => {
                 longitude: userLng
             },
             searchRadius: radius,
-            totalCommunes: closestCommunes.length,
             totalPharmacies: result.length,
-            communes: closestCommunes.map(c => ({
-                name: c.commune,
-                averageDistance: c.averageDistance === 999999 ? null : parseFloat(c.averageDistance.toFixed(2)),
-                pharmaciesCount: c.pharmacies.length
-            })),
+            totalCommunes: Object.keys(communeStats).length,
+            communes: Object.values(communeStats).sort((a, b) => {
+                // Trier les communes par distance la plus proche (celles sans coordonnées à la fin)
+                if (a.closestDistance === null && b.closestDistance === null) return 0;
+                if (a.closestDistance === null) return 1;
+                if (b.closestDistance === null) return -1;
+                return a.closestDistance - b.closestDistance;
+            }),
             pharmacies: result
         };
 
@@ -171,7 +184,7 @@ router.post('/', authenticate(), async (req, res) => {
         logData.status = "SUCCESS";
         logData.responseData = {
             totalPharmacies: result.length,
-            totalCommunes: closestCommunes.length
+            totalCommunes: Object.keys(communeStats).length
         };
         await Logger.logEvent(logData);
 
