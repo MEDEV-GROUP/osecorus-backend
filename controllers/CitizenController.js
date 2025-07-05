@@ -24,6 +24,9 @@ const nearbyFloodAlerts = require('../routes/' + service + '/nearbyFloodAlerts')
 const getNearbyPharmacies = require('../routes/' + service + '/getNearbyPharmacies');
 const getPharmaciesByCommune = require('../routes/' + service + '/getPharmaciesByCommune');
 
+const incidentsStats = require('../routes/' + service + '/incidentsStats');
+
+
 
 // Utilisation des routes
 router.use('/create-alert', createAlert);
@@ -44,6 +47,8 @@ router.use('/nearby-flood-alerts', nearbyFloodAlerts); // Ajout de la nouvelle r
 
 router.use('/pharmacies/nearby', getNearbyPharmacies);
 router.use('/pharmacies/commune', getPharmaciesByCommune);
+
+router.use('/incidents/stats', incidentsStats);
 
 
 
