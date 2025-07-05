@@ -21,21 +21,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
-// Fonction pour calculer la distance moyenne d'une commune par rapport à un point
-function calculateCommuneDistance(userLat, userLng, communePharmacies) {
-    const pharmaciesWithCoords = communePharmacies.filter(p => p.latitude && p.longitude);
-
-    if (pharmaciesWithCoords.length === 0) {
-        return 999999; // Distance très élevée pour les communes sans coordonnées
-    }
-
-    const totalDistance = pharmaciesWithCoords.reduce((sum, pharmacy) => {
-        return sum + calculateDistance(userLat, userLng, parseFloat(pharmacy.latitude), parseFloat(pharmacy.longitude));
-    }, 0);
-
-    return totalDistance / pharmaciesWithCoords.length;
-}
-
 router.post('/', authenticate(), async (req, res) => {
     const logData = {
         message: "",
@@ -76,89 +61,49 @@ router.post('/', authenticate(), async (req, res) => {
         const userLat = parseFloat(latitude);
         const userLng = parseFloat(longitude);
 
-        // Récupérer toutes les pharmacies actives
-        const allPharmacies = await Pharmacy.findAll({
+        // Récupérer uniquement les pharmacies actives avec coordonnées GPS
+        const pharmaciesWithCoords = await Pharmacy.findAll({
             where: {
-                is_active: true
+                is_active: true,
+                latitude: {
+                    [Op.not]: null
+                },
+                longitude: {
+                    [Op.not]: null
+                }
             },
             order: [['name', 'ASC']]
         });
 
-        // Séparer les pharmacies avec et sans coordonnées
-        const pharmaciesWithCoords = [];
-        const pharmaciesWithoutCoords = [];
-
-        allPharmacies.forEach(pharmacy => {
-            if (pharmacy.latitude && pharmacy.longitude) {
-                const distance = calculateDistance(userLat, userLng, parseFloat(pharmacy.latitude), parseFloat(pharmacy.longitude));
-                pharmaciesWithCoords.push({
-                    ...pharmacy.toJSON(),
-                    distance: parseFloat(distance.toFixed(2))
-                });
-            } else {
-                pharmaciesWithoutCoords.push({
-                    ...pharmacy.toJSON(),
-                    distance: null
-                });
-            }
+        // Calculer la distance pour chaque pharmacie
+        const pharmaciesWithDistance = pharmaciesWithCoords.map(pharmacy => {
+            const distance = calculateDistance(userLat, userLng, parseFloat(pharmacy.latitude), parseFloat(pharmacy.longitude));
+            return {
+                ...pharmacy.toJSON(),
+                distance: parseFloat(distance.toFixed(2))
+            };
         });
 
-        // Filtrer les pharmacies dans le rayon spécifié
-        const nearbyPharmacies = pharmaciesWithCoords.filter(p => p.distance <= radius);
-
-        // Trier toutes les pharmacies avec coordonnées par distance (les plus proches en premier)
-        nearbyPharmacies.sort((a, b) => a.distance - b.distance);
-
-        // Obtenir les communes des pharmacies trouvées
-        const foundCommunes = [...new Set(nearbyPharmacies.map(p => p.commune))];
-
-        // Ajouter les pharmacies sans coordonnées des mêmes communes à la fin
-        const pharmaciesWithoutCoordsFromSameCommunes = pharmaciesWithoutCoords
-            .filter(p => foundCommunes.includes(p.commune))
-            .sort((a, b) => a.name.localeCompare(b.name)); // Tri alphabétique pour celles sans coordonnées
-
-        // Si moins de 5 communes trouvées, ajouter des pharmacies sans coordonnées d'autres communes
-        let additionalPharmaciesWithoutCoords = [];
-        if (foundCommunes.length < 5) {
-            const otherCommunes = [...new Set(pharmaciesWithoutCoords
-                .filter(p => !foundCommunes.includes(p.commune))
-                .map(p => p.commune))]
-                .slice(0, 5 - foundCommunes.length);
-
-            additionalPharmaciesWithoutCoords = pharmaciesWithoutCoords
-                .filter(p => otherCommunes.includes(p.commune))
-                .sort((a, b) => a.name.localeCompare(b.name));
-        }
-
-        // Combiner les résultats : pharmacies avec coordonnées (par distance) + pharmacies sans coordonnées (par nom)
-        const result = [
-            ...nearbyPharmacies,
-            ...pharmaciesWithoutCoordsFromSameCommunes,
-            ...additionalPharmaciesWithoutCoords
-        ];
+        // Filtrer les pharmacies dans le rayon spécifié et trier par distance
+        const nearbyPharmacies = pharmaciesWithDistance
+            .filter(p => p.distance <= radius)
+            .sort((a, b) => a.distance - b.distance);
 
         // Obtenir les statistiques par commune pour la réponse
         const communeStats = {};
-        result.forEach(pharmacy => {
+        nearbyPharmacies.forEach(pharmacy => {
             if (!communeStats[pharmacy.commune]) {
                 communeStats[pharmacy.commune] = {
                     name: pharmacy.commune,
                     count: 0,
-                    withCoordinates: 0,
-                    withoutCoordinates: 0,
-                    closestDistance: null
+                    closestDistance: pharmacy.distance
                 };
             }
             communeStats[pharmacy.commune].count++;
 
-            if (pharmacy.distance !== null) {
-                communeStats[pharmacy.commune].withCoordinates++;
-                if (communeStats[pharmacy.commune].closestDistance === null ||
-                    pharmacy.distance < communeStats[pharmacy.commune].closestDistance) {
-                    communeStats[pharmacy.commune].closestDistance = pharmacy.distance;
-                }
-            } else {
-                communeStats[pharmacy.commune].withoutCoordinates++;
+            // Mettre à jour la distance la plus proche pour cette commune
+            if (pharmacy.distance < communeStats[pharmacy.commune].closestDistance) {
+                communeStats[pharmacy.commune].closestDistance = pharmacy.distance;
             }
         });
 
@@ -168,22 +113,16 @@ router.post('/', authenticate(), async (req, res) => {
                 longitude: userLng
             },
             searchRadius: radius,
-            totalPharmacies: result.length,
+            totalPharmacies: nearbyPharmacies.length,
             totalCommunes: Object.keys(communeStats).length,
-            communes: Object.values(communeStats).sort((a, b) => {
-                // Trier les communes par distance la plus proche (celles sans coordonnées à la fin)
-                if (a.closestDistance === null && b.closestDistance === null) return 0;
-                if (a.closestDistance === null) return 1;
-                if (b.closestDistance === null) return -1;
-                return a.closestDistance - b.closestDistance;
-            }),
-            pharmacies: result
+            communes: Object.values(communeStats).sort((a, b) => a.closestDistance - b.closestDistance),
+            pharmacies: nearbyPharmacies
         };
 
         logData.message = "Pharmacies à proximité récupérées avec succès";
         logData.status = "SUCCESS";
         logData.responseData = {
-            totalPharmacies: result.length,
+            totalPharmacies: nearbyPharmacies.length,
             totalCommunes: Object.keys(communeStats).length
         };
         await Logger.logEvent(logData);
