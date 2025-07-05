@@ -58,6 +58,7 @@ router.get('/', async (req, res) => {
         // Récupérer les établissements avec pagination
         const etablissements = await EtablissementSante.findAll({
             where: whereClause,
+            attributes: ['id', 'nom_etablissement', 'categorie', 'ville_commune', 'quartier', 'latitude', 'longitude'], // Ajout de cette ligne
             limit: limit,
             offset: offset,
             order: [['ville_commune', 'ASC'], ['nom_etablissement', 'ASC']]
@@ -73,33 +74,8 @@ router.get('/', async (req, res) => {
             coordinates: {
                 latitude: etablissement.latitude,
                 longitude: etablissement.longitude
-            },
-            isActive: etablissement.is_active,
-            createdAt: etablissement.createdAt,
-            updatedAt: etablissement.updatedAt
+            }
         }));
-
-        // Statistiques détaillées par catégorie pour les résultats filtrés
-        const categorieStats = await EtablissementSante.findAll({
-            where: whereClause,
-            attributes: [
-                'categorie',
-                [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
-            ],
-            group: ['categorie'],
-            order: [['categorie', 'ASC']]
-        });
-
-        // Statistiques détaillées par commune pour les résultats filtrés
-        const communeStats = await EtablissementSante.findAll({
-            where: whereClause,
-            attributes: [
-                'ville_commune',
-                [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
-            ],
-            group: ['ville_commune'],
-            order: [['ville_commune', 'ASC']]
-        });
 
         // Métadonnées de pagination
         const pagination = {
@@ -108,28 +84,15 @@ router.get('/', async (req, res) => {
             totalItems: totalEtablissements,
             totalPages: Math.ceil(totalEtablissements / limit),
             hasNextPage: page < Math.ceil(totalEtablissements / limit),
-            hasPreviousPage: page > 1,
-            nextPage: page < Math.ceil(totalEtablissements / limit) ? page + 1 : null,
-            previousPage: page > 1 ? page - 1 : null
+            hasPreviousPage: page > 1
         };
 
-        // Réponse structurée
+        // Réponse simplifiée
         const response = {
             pagination,
             filtresAppliques: {
                 commune: req.query.commune || null,
                 categorie: req.query.categorie || null
-            },
-            statistics: {
-                totalCorrespondant: totalEtablissements,
-                parCategorie: categorieStats.map(stat => ({
-                    categorie: stat.categorie,
-                    count: parseInt(stat.dataValues.count)
-                })),
-                parCommune: communeStats.map(stat => ({
-                    commune: stat.ville_commune,
-                    count: parseInt(stat.dataValues.count)
-                }))
             },
             etablissements: formattedEtablissements
         };
@@ -137,8 +100,6 @@ router.get('/', async (req, res) => {
         logData.message = "Établissements de santé filtrés récupérés avec succès";
         logData.status = "SUCCESS";
         logData.responseData = {
-            pagination,
-            filtresAppliques: response.filtresAppliques,
             count: formattedEtablissements.length,
             totalEtablissements: totalEtablissements
         };
