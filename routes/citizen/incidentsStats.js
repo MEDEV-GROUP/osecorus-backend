@@ -105,9 +105,10 @@ router.get('/', async (req, res) => {
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
+        // Fonction compatible MySQL pour extraire année-mois
         const monthlyTrends = await Incident.findAll({
             attributes: [
-                [Incident.sequelize.fn('DATE_TRUNC', 'month', Incident.sequelize.col('date')), 'month'],
+                [Incident.sequelize.fn('DATE_FORMAT', Incident.sequelize.col('date'), '%Y-%m-01'), 'month'],
                 [Incident.sequelize.fn('COUNT', Incident.sequelize.col('id')), 'count']
             ],
             where: {
@@ -116,8 +117,8 @@ router.get('/', async (req, res) => {
                     [Op.gte]: twelveMonthsAgo
                 }
             },
-            group: [Incident.sequelize.fn('DATE_TRUNC', 'month', Incident.sequelize.col('date'))],
-            order: [[Incident.sequelize.fn('DATE_TRUNC', 'month', Incident.sequelize.col('date')), 'ASC']],
+            group: [Incident.sequelize.fn('DATE_FORMAT', Incident.sequelize.col('date'), '%Y-%m-01')],
+            order: [[Incident.sequelize.fn('DATE_FORMAT', Incident.sequelize.col('date'), '%Y-%m-01'), 'ASC']],
             raw: true
         });
 
