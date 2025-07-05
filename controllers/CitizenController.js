@@ -18,8 +18,11 @@ const getSafeNumbers = require('../routes/' + service + '/getSafeNumbers');
 const safeBroadcast = require('../routes/' + service + '/safeBroadcast');
 const reverse = require('../routes/' + service + '/reverse');
 const getAlertDetails = require('../routes/' + service + '/getAlertDetails');
-const loginWithPhone = require('../routes/' + service + '/loginWithPhone'); // Nouvelle route
-const nearbyFloodAlerts = require('../routes/' + service + '/nearbyFloodAlerts'); // Nouvelle route pour alertes d'inondation
+const loginWithPhone = require('../routes/' + service + '/loginWithPhone');
+const nearbyFloodAlerts = require('../routes/' + service + '/nearbyFloodAlerts');
+
+const getNearbyPharmacies = require('../routes/' + service + '/getNearbyPharmacies');
+const getPharmaciesByCommune = require('../routes/' + service + '/getPharmaciesByCommune');
 
 
 // Utilisation des routes
@@ -38,6 +41,9 @@ router.use('/safe-numbers', getSafeNumbers);
 router.use('/safe', safeBroadcast);
 router.use('/login', loginWithPhone); // Ajout de la route de connexion
 router.use('/nearby-flood-alerts', nearbyFloodAlerts); // Ajout de la nouvelle route
+
+router.use('/pharmacies/nearby', getNearbyPharmacies);
+router.use('/pharmacies/commune', getPharmaciesByCommune);
 
 
 
