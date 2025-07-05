@@ -64,6 +64,7 @@ router.post('/', async (req, res) => {
                     [Op.not]: null
                 }
             },
+            attributes: ['id', 'nom_etablissement', 'categorie', 'ville_commune', 'quartier', 'latitude', 'longitude'],
             order: [['nom_etablissement', 'ASC']]
         });
 
