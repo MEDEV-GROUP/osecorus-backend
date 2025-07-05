@@ -37,6 +37,7 @@ router.get('/', async (req, res) => {
         // Récupérer les établissements avec pagination
         const etablissements = await EtablissementSante.findAll({
             where: whereClause,
+            attributes: ['id', 'nom_etablissement', 'categorie', 'ville_commune', 'quartier', 'latitude', 'longitude', 'is_active'], // Ajout de cette ligne
             limit: limit,
             offset: offset,
             order: [['ville_commune', 'ASC'], ['nom_etablissement', 'ASC']]
