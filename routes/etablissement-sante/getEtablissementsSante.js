@@ -54,8 +54,6 @@ router.get('/', async (req, res) => {
                 longitude: etablissement.longitude
             },
             isActive: etablissement.is_active,
-            createdAt: etablissement.createdAt,
-            updatedAt: etablissement.updatedAt
         }));
 
         // Statistiques par catégorie
