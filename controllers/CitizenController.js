@@ -22,10 +22,6 @@ const loginWithPhone = require('../routes/' + service + '/loginWithPhone'); // N
 const nearbyFloodAlerts = require('../routes/' + service + '/nearbyFloodAlerts'); // Nouvelle route pour alertes d'inondation
 
 
-
-
-
-
 // Utilisation des routes
 router.use('/create-alert', createAlert);
 router.use('/latest-alert', getLatestAlert);
