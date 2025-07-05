@@ -30,10 +30,10 @@ router.get('/', async (req, res) => {
             is_active: true
         };
 
-        // Filtre par commune si spécifié
+        // Filtre par commune si spécifié (changement ici)
         if (req.query.commune) {
             whereClause.ville_commune = {
-                [Op.iLike]: `%${req.query.commune}%`
+                [Op.like]: `%${req.query.commune}%`  // Changé de iLike à like
             };
         }
 
@@ -58,7 +58,7 @@ router.get('/', async (req, res) => {
         // Récupérer les établissements avec pagination
         const etablissements = await EtablissementSante.findAll({
             where: whereClause,
-            attributes: ['id', 'nom_etablissement', 'categorie', 'ville_commune', 'quartier', 'latitude', 'longitude'], // Ajout de cette ligne
+            attributes: ['id', 'nom_etablissement', 'categorie', 'ville_commune', 'quartier', 'latitude', 'longitude'],
             limit: limit,
             offset: offset,
             order: [['ville_commune', 'ASC'], ['nom_etablissement', 'ASC']]
