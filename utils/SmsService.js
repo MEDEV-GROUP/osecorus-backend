@@ -117,17 +117,11 @@ class SmsService {
     }
 
     /**
-     * Génère un code OTP
-     * @param {number} length - Longueur du code (par défaut 6)
+     * Génère un code OTP de 5 chiffres (comme l'ancien système Twilio)
      * @returns {string} Code OTP généré
      */
-    static generateOtp(length = 6) {
-        const digits = '0123456789';
-        let otp = '';
-        for (let i = 0; i < length; i++) {
-            otp += digits[Math.floor(Math.random() * digits.length)];
-        }
-        return otp;
+    static generateOtp() {
+        return Math.floor(10000 + Math.random() * 90000).toString(); // OTP à 5 chiffres
     }
 
     /**
